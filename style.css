@@ -1,0 +1,168 @@
+/* --- Body --- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #e5e7eb; /* Light grey background */
+    margin: 0;
+}
+
+/* --- Header for dashboard --- */
+header {
+    background-color: #1e40af; /* Dark Blue */
+    color: #fff;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+header .logout a {
+    color: #fff;
+    background-color: #3b82f6;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+header .logout a:hover {
+    background-color: #2563eb;
+}
+
+/* --- Login & Dashboard container --- */
+.login-container, .dashboard-container {
+    background: #f9fafb; /* Very light grey */
+    padding: 40px 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    width: 380px;
+    text-align: center;
+    margin: 40px auto;
+}
+
+/* --- Headings --- */
+.login-container h2, .dashboard-container h2 {
+    color: #1e40af; /* Dark Blue */
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+/* --- Inputs --- */
+.login-container input, .dashboard-container input {
+    width: 100%;
+    padding: 14px;
+    margin: 12px 0;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1; /* soft grey border */
+    font-size: 16px;
+}
+
+/* --- Buttons --- */
+.login-container button, .dashboard-container button {
+    width: 100%;
+    padding: 14px;
+    background-color: #3b82f6; /* Light Blue */
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+.login-container button:hover, .dashboard-container button:hover {
+    background-color: #2563eb; /* Darker blue on hover */
+}
+
+/* --- Error message --- */
+.error-msg {
+    color: #ef4444; /* Red */
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* --- Paragraphs --- */
+.dashboard-container p {
+    color: #4b5563; /* Grey text */
+    margin-bottom: 20px;
+}
+
+/* --- Dashboard welcome card --- */
+.welcome-card {
+    background: #fff;
+    padding: 25px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.welcome-card h2 {
+    margin-bottom: 10px;
+    color: #1e3a8a;
+}
+
+/* --- Dashboard action cards --- */
+.action-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.action-cards a {
+    text-decoration: none;
+    width: 250px;
+}
+
+.card {
+    background: #fff;
+    padding: 25px 20px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+    color: #1f2937;
+}
+
+.card h3 {
+    margin-bottom: 10px;
+    color: #1e3a8a;
+}
+
+.card p {
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+}
+
+/* --- Dashboard links / buttons --- */
+.dashboard-container a {
+    display: block;
+    margin: 12px 0;
+}
+
+/* --- Responsive --- */
+@media (max-width: 420px) {
+    .login-container, .dashboard-container {
+        width: 90%;
+        padding: 30px 20px;
+    }
+    .action-cards {
+        flex-direction: column;
+        align-items: center;
+    }
+    .action-cards a {
+        width: 100%;
+    }
+}
