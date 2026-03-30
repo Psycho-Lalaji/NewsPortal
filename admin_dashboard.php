@@ -33,7 +33,7 @@ if (($_SESSION['user_role'] ?? '') !== 'admin') {
         </div>
 
         <div class="action-cards">
-            <a href="#"><div class="card">
+            <a href="manage_users.php"><div class="card">
                 <h3>Manage Users</h3>
                 <p>Create, update, and deactivate portal users.</p>
             </div></a>
