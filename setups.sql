@@ -19,4 +19,4 @@ VALUES (
 ON DUPLICATE KEY UPDATE role = 'admin';
 
 -- Temporary admin password: Admin@12345
--- Change it right after first login.
+-- Change it right after fir5st login.
