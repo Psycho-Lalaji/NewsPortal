@@ -1,18 +1,13 @@
 <?php
 session_start();
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
     exit;
 }
 
-$role = $_SESSION['user_role'] ?? '';
-
-if (!in_array($role, ['user', 'editor'], true)) {
-    if ($role === 'admin') {
-        header("Location: admin_dashboard.php");
-    } else {
-        header("Location: index.php");
-    }
+if (($_SESSION['user_role'] ?? '') !== 'admin') {
+    header("Location: dashboard.php");
     exit;
 }
 ?>
@@ -20,12 +15,12 @@ if (!in_array($role, ['user', 'editor'], true)) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Editor Dashboard</title>
+    <title>Admin Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>News Portal Editor Dashboard</h1>
+        <h1>News Portal Admin Dashboard</h1>
         <div class="logout">
             <a href="logout.php">Logout</a>
         </div>
@@ -34,23 +29,23 @@ if (!in_array($role, ['user', 'editor'], true)) {
     <main>
         <div class="welcome-card">
             <h2>Welcome, <?php echo htmlspecialchars($_SESSION['user_name']); ?>!</h2>
-            <p>Manage your articles, create new content, and edit existing posts here.</p>
+            <p>Admin access enabled. You can manage users and system-level settings here.</p>
         </div>
 
         <div class="action-cards">
             <a href="#"><div class="card">
-                <h3>Create Article</h3>
-                <p>Write and publish new articles for the news portal.</p>
+                <h3>Manage Users</h3>
+                <p>Create, update, and deactivate portal users.</p>
             </div></a>
 
             <a href="#"><div class="card">
-                <h3>Edit Articles</h3>
-                <p>Modify existing articles and update content.</p>
+                <h3>Content Review</h3>
+                <p>Review and approve editor-submitted content.</p>
             </div></a>
 
             <a href="#"><div class="card">
-                <h3>View Articles</h3>
-                <p>View all published articles in one place.</p>
+                <h3>System Settings</h3>
+                <p>Update portal-level settings and configurations.</p>
             </div></a>
         </div>
     </main>
