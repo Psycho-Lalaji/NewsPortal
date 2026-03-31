@@ -38,7 +38,7 @@ if (!in_array($role, ['user', 'editor'], true)) {
         </div>
 
         <div class="action-cards">
-            <a href="#"><div class="card">
+            <a href="news-form.html"><div class="card">
                 <h3>Create Article</h3>
                 <p>Write and publish new articles for the news portal.</p>
             </div></a>
