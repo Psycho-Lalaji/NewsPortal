@@ -125,6 +125,26 @@ select {
     margin-bottom: 20px;
 }
 
+/* --- Status messages --- */
+.status-msg {
+    margin: 12px 0 18px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.status-msg.success {
+    background: #ecfdf3;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.status-msg.error {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
 /* --- Responsive --- */
 @media (max-width: 420px) {
     .dashboard-container {
