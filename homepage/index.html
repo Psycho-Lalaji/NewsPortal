@@ -1,103 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NewsNow + Claude Portal</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<header>
-  <div class="top-nav">
-    <div class="logo">NewsPortal</div>
-    <nav>
-      <ul class="nav-links">
-        <li><a href="#" class="active">Home</a></li>
-        <li><a href="#">International</a></li>
-        <li><a href="#">National</a></li>
-        <li><a href="#">Tech</a></li>
-        <li><a href="#">Sports</a></li>
-        <li><a href="#">Health</a></li>
-      </ul>
-    </nav>
-    <div class="search-bar">
-      <input type="text" placeholder="Search news..." id="searchInput">
-      <button onclick="searchNews()">🔍</button>
-      <button class="mode-toggle" onclick="toggleMode()">Dark Mode</button>
-      <button class="register-btn" onclick="alert('Register/Login placeholder')">Register</button>
-    </div>
-  </div>
-</header>
-
-<main class="container">
-
-  <!-- Hero + Side Top Stories -->
-  <section class="top-stories">
-    <div class="section-label">TOP STORIES</div>
-    <div class="stories-grid">
-      <div class="hero-story" id="heroStory">
-        <!-- Hero story populated by JS -->
-      </div>
-      <div class="side-stories" id="sideStories">
-        <!-- Side stories populated by JS -->
+  <header>
+    <div class="top-nav">
+      <div class="logo">NewsPortal</div>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="#" class="active">Home</a></li>
+          <li><a href="#">International</a></li>
+          <li><a href="#">National</a></li>
+          <li><a href="#">Tech</a></li>
+          <li><a href="#">Sports</a></li>
+          <li><a href="#">Health</a></li>
+        </ul>
+      </nav>
+      <div class="search-bar">
+        <input type="text" placeholder="Search news..." id="searchInput">
+        <button onclick="searchNews()">🔍</button>
+        <button class="mode-toggle" onclick="toggleMode()">Dark Mode</button>
+        <button class="register-btn" onclick="alert('Register/Login placeholder')">Register</button>
       </div>
     </div>
-  </section>
+  </header>
 
-  <!-- Carousel for other top news -->
-  <div class="carousel">
-    <div class="carousel-track" id="carouselTrack"></div>
-    <div class="prev" onclick="prevSlide()">&#10094;</div>
-    <div class="next" onclick="nextSlide()">&#10095;</div>
-  </div>
+  <main class="container">
 
-  <!-- News Sections -->
-  <div class="main-content">
-    <div class="sections-container" id="sectionsContainer"></div>
-    <aside class="sidebar">
-      <div class="section-title">Trending</div>
-      <div id="trendingNews"></div>
-    </aside>
-  </div>
+    <!-- Hero + Side Top Stories -->
+    <section class="top-stories">
+      <div class="section-label">TOP STORIES</div>
+      <div class="stories-grid">
+        <div class="hero-story" id="heroStory">
+          <!-- Hero story populated by JS -->
+        </div>
+        <div class="side-stories" id="sideStories">
+          <!-- Side stories populated by JS -->
+        </div>
+      </div>
+    </section>
 
-</main>
+    <!-- Carousel for other top news -->
+    <div class="carousel">
+      <div class="carousel-track" id="carouselTrack"></div>
+      <div class="prev" onclick="prevSlide()">&#10094;</div>
+      <div class="next" onclick="nextSlide()">&#10095;</div>
+    </div>
+
+    <!-- News Sections -->
+    <div class="main-content">
+      <div class="sections-container" id="sectionsContainer"></div>
+      <aside class="sidebar">
+        <div class="section-title">Trending</div>
+        <div id="trendingNews"></div>
+      </aside>
+    </div>
+
+  </main>
 
 </body>
+
 </html>
 <script>
-// ===== Placeholder JS =====
-let carouselIndex = 0;
-let carouselItems = [];
+  // ===== Placeholder JS =====
+  let carouselIndex = 0;
+  let carouselItems = [];
 
-function displayCarousel(articles){
-  carouselItems = articles;
-  const track = document.getElementById("carouselTrack");
-  track.innerHTML = articles.map(a=>`
+  function displayCarousel(newsItems) {
+    carouselItems = newsItems;
+    const track = document.getElementById("carouselTrack");
+    track.innerHTML = newsItems.map(a => `
     <div class="carousel-item">
-      <img src="${a.urlToImage||'https://via.placeholder.com/800x400'}">
+      <img src="${a.urlToImage || 'https://via.placeholder.com/800x400'}">
       <div class="carousel-text">
         <h2>${a.title}</h2>
-        <p>${a.description||''}</p>
+        <p>${a.description || ''}</p>
       </div>
     </div>`).join('');
-  showSlide(carouselIndex);
-}
+    showSlide(carouselIndex);
+  }
 
-function showSlide(index){ document.getElementById("carouselTrack").style.transform=`translateX(-${index*100}%)`; }
-function nextSlide(){ carouselIndex=(carouselIndex+1)%carouselItems.length; showSlide(carouselIndex);}
-function prevSlide(){ carouselIndex=(carouselIndex-1+carouselItems.length)%carouselItems.length; showSlide(carouselIndex);}
-setInterval(()=>nextSlide(),5000);
+  function showSlide(index) { document.getElementById("carouselTrack").style.transform = `translateX(-${index * 100}%)`; }
+  function nextSlide() { carouselIndex = (carouselIndex + 1) % carouselItems.length; showSlide(carouselIndex); }
+  function prevSlide() { carouselIndex = (carouselIndex - 1 + carouselItems.length) % carouselItems.length; showSlide(carouselIndex); }
+  setInterval(() => nextSlide(), 5000);
 
-function toggleMode(){ document.body.classList.toggle("dark-mode"); }
-function searchNews(){ alert('Search placeholder'); }
+  function toggleMode() { document.body.classList.toggle("dark-mode"); }
+  function searchNews() { alert('Search placeholder'); }
 
-// ===== Display News Sections =====
-function displaySections(){
-  const container = document.getElementById("sectionsContainer");
-  const categories = ['International','National','Tech','Sports','Health'];
-  categories.forEach(cat=>{
-    const html = `<div class="section-title">${cat}</div>
+  // ===== Display News Sections =====
+  function displaySections() {
+    const container = document.getElementById("sectionsContainer");
+    const categories = ['International', 'National', 'Tech', 'Sports', 'Health'];
+    categories.forEach(cat => {
+      const html = `<div class="section-title">${cat}</div>
     <div class="news-grid">
       <div class="news-item">
         <img src="https://via.placeholder.com/280x180">
@@ -126,37 +129,38 @@ function displaySections(){
         </div>
       </div>
     </div>`;
-    container.innerHTML += html;
-  });
-}
+      container.innerHTML += html;
+    });
+  }
 
-// ===== Vote Function =====
-function vote(btn,value){
-  const countEl = btn.parentElement.querySelector('.vote-count');
-  let count = parseInt(countEl.innerText);
-  count += value;
-  countEl.innerText = count;
-  countEl.classList.add('animate');
-  setTimeout(()=>countEl.classList.remove('animate'),300);
-}
+  // ===== Vote Function =====
+  function vote(btn, value) {
+    const countEl = btn.parentElement.querySelector('.vote-count');
+    let count = parseInt(countEl.innerText);
+    count += value;
+    countEl.innerText = count;
+    countEl.classList.add('animate');
+    setTimeout(() => countEl.classList.remove('animate'), 300);
+  }
 
-// ===== Display Trending =====
-function displayTrending(){
-  const container = document.getElementById("trendingNews");
-  ['Trending 1','Trending 2','Trending 3','Trending 4'].forEach(t=>{
-    container.innerHTML += `<div class="trending-item"><a href="#">${t}</a></div>`;
-  });
-}
+  // ===== Display Trending =====
+  function displayTrending() {
+    const container = document.getElementById("trendingNews");
+    ['Trending 1', 'Trending 2', 'Trending 3', 'Trending 4'].forEach(t => {
+      container.innerHTML += `<div class="trending-item"><a href="#">${t}</a></div>`;
+    });
+  }
 
-// ===== Init =====
-displaySections();
-displayTrending();
-displayCarousel([
-  {title:"Top Headline 1", description:"Description", urlToImage:"https://via.placeholder.com/800x400"},
-  {title:"Top Headline 2", description:"Description", urlToImage:"https://via.placeholder.com/800x400"},
-  {title:"Top Headline 3", description:"Description", urlToImage:"https://via.placeholder.com/800x400"},
-]);
+  // ===== Init =====
+  displaySections();
+  displayTrending();
+  displayCarousel([
+    { title: "Top Headline 1", description: "Description", urlToImage: "https://via.placeholder.com/800x400" },
+    { title: "Top Headline 2", description: "Description", urlToImage: "https://via.placeholder.com/800x400" },
+    { title: "Top Headline 3", description: "Description", urlToImage: "https://via.placeholder.com/800x400" },
+  ]);
 </script>
 
 </body>
+
 </html>
