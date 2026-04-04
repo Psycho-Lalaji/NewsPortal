@@ -9,6 +9,22 @@ CREATE TABLE IF NOT EXISTS users (
   role ENUM('user','admin','editor') NOT NULL DEFAULT 'user'
 );
 
+CREATE TABLE IF NOT EXISTS news_posts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  summary TEXT,
+  category VARCHAR(50) NOT NULL,
+  media_path VARCHAR(255),
+  media_type ENUM('image','video') NULL,
+  author_name VARCHAR(120),
+  created_by INT NULL,
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_news_created_by
+    FOREIGN KEY (created_by) REFERENCES users(id)
+    ON DELETE SET NULL
+);
+
 INSERT INTO users (username, email, password, role)
 VALUES (
   'admin',

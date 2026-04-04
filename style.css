@@ -310,6 +310,28 @@ header .logout a:hover {
     color: #1e3a8a;
 }
 
+/* --- Primary action button --- */
+.primary-action-wrap {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.primary-action {
+    display: inline-block;
+    background-color: #3b82f6;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 12px 18px;
+    border-radius: 8px;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.primary-action:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+}
+
 /* --- Dashboard action cards --- */
 .action-cards {
     display: flex;
@@ -381,3 +403,4 @@ header .logout a:hover {
         padding: 10px 8px;
     }
 }
+
