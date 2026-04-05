@@ -73,8 +73,8 @@ END TEAM CODE
         </form>
 
         <p class="auth-switch">
-            NEW USER? <a href="register.php">REGISTER</a>
-        </p>
+  USER LOGIN? <a href="user_login.php">GO HERE</a>
+</p>
 
     </div>
 
