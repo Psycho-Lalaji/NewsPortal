@@ -86,7 +86,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </form>
 
         <p class="auth-switch">
-            ALREADY REGISTERED? <a href="index.php">LOGIN</a>
+            ALREADY REGISTERED? <a href="user_login.php">LOGIN</a>
         </p>
 
     </div>
