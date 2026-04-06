@@ -38,9 +38,9 @@ if (($_SESSION['user_role'] ?? '') !== 'admin') {
                 <p>Create, update, and deactivate portal users.</p>
             </div></a>
 
-            <a href="#"><div class="card">
-                <h3>Content Review</h3>
-                <p>Review and approve editor-submitted content.</p>
+            <a href="admin_review.php"><div class="card">
+                <h3>News Review</h3>
+                <p>Review and approve editor-submitted news.</p>
             </div></a>
 
             <a href="#"><div class="card">
