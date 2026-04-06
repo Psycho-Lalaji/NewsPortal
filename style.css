@@ -7,7 +7,7 @@ body {
 
 /* --- Header for dashboard --- */
 header {
-    background-color: #1e40af; /* Dark Blue */
+    background-color: #0a3d62; /* Dark Blue */
     color: #fff;
     padding: 20px 40px;
     display: flex;
@@ -22,7 +22,7 @@ header h1 {
 
 header .logout a {
     color: #fff;
-    background-color: #3b82f6;
+    background-color: #0a3d62;
     padding: 8px 16px;
     border-radius: 8px;
     text-decoration: none;
@@ -66,7 +66,7 @@ header .logout a:hover {
 .login-container button, .dashboard-container button {
     width: 100%;
     padding: 14px;
-    background-color: #3b82f6; /* Light Blue */
+    background-color: #0a3d62; /* Light Blue */
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -77,7 +77,7 @@ header .logout a:hover {
 }
 
 .login-container button:hover, .dashboard-container button:hover {
-    background-color: #2563eb; /* Darker blue on hover */
+    background-color: #0a3d62; /* Darker blue on hover */
 }
 
 /* --- Error message --- */
@@ -136,7 +136,7 @@ header .logout a:hover {
 .admin-form button {
     width: 100%;
     padding: 12px;
-    background-color: #3b82f6;
+    background-color: #0a3d62;
     color: #fff;
     border: none;
     border-radius: 8px;
