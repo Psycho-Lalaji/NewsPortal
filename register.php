@@ -6,24 +6,54 @@ $success = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    $username = trim($_POST['username']);
-    $email = trim($_POST['email']);
-    $password = $_POST['password'];
+    $username = trim($_POST['username'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
 
-    if ($username && $email && $password) {
-
-        $hashed = password_hash($password, PASSWORD_DEFAULT);
-
-        $stmt = $conn->prepare("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, 'user')");
-        $stmt->bind_param("sss", $username, $email, $hashed);
-
-        if ($stmt->execute()) {
-            $success = "Account created successfully!";
-        } else {
-            $error = "User already exists!";
-        }
+    if ($username === '' || $email === '' || $password === '') {
+        $error = "All fields are required.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Please enter a valid email address.";
+    } elseif (strlen($username) < 3 || strlen($username) > 100) {
+        $error = "Username must be between 3 and 100 characters.";
+    } elseif (strlen($password) < 8) {
+        $error = "Password must be at least 8 characters.";
     } else {
-        $error = "All fields are required";
+        $checkStmt = $conn->prepare("SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1");
+
+        if ($checkStmt === false) {
+            $error = "Unable to process registration right now.";
+        } else {
+            $checkStmt->bind_param("ss", $username, $email);
+            $checkStmt->execute();
+            $checkStmt->store_result();
+
+            if ($checkStmt->num_rows > 0) {
+                $error = "Username or email already exists.";
+            } else {
+                $hashed = password_hash($password, PASSWORD_DEFAULT);
+
+                $stmt = $conn->prepare("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, 'user')");
+                if ($stmt === false) {
+                    $error = "Unable to create account right now.";
+                } else {
+                    $stmt->bind_param("sss", $username, $email, $hashed);
+
+                    if ($stmt->execute()) {
+                        $stmt->close();
+                        $checkStmt->close();
+                        $conn->close();
+                        header("Location: login.php?success=" . rawurlencode("Account created successfully. Please log in."));
+                        exit;
+                    }
+
+                    $error = "Unable to create account right now.";
+                    $stmt->close();
+                }
+            }
+
+            $checkStmt->close();
+        }
     }
 }
 ?>
@@ -86,7 +116,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </form>
 
         <p class="auth-switch">
-            ALREADY REGISTERED? <a href="user_login.php">LOGIN</a>
+            ALREADY REGISTERED? <a href="login.php">LOGIN</a>
         </p>
 
     </div>
