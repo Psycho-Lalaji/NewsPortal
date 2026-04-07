@@ -7,11 +7,11 @@ if (!isset($_SESSION['user_id'])) {
 
 $role = $_SESSION['user_role'] ?? '';
 
-if (!in_array($role, ['user', 'editor'], true)) {
+if ($role !== 'editor') {
     if ($role === 'admin') {
         header("Location: admin_dashboard.php");
     } else {
-        header("Location: index.php");
+        header("Location: home.php");
     }
     exit;
 }
