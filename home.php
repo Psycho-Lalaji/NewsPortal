@@ -309,6 +309,20 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   buildApproval();
   useMockData();          // render immediately
   populateTicker(MOCK);
+  // Apply category filter from URL param (e.g. when navigating back from detail page)
+  const urlCat=new URLSearchParams(window.location.search).get('cat');
+  if(urlCat){
+    currentCat=urlCat;
+    document.getElementById('active-cat-label').textContent='Showing: '+urlCat;
+    document.querySelectorAll('nav a').forEach(a=>{
+      // Get only the text node content, ignoring child element text (e.g. LIVE badge)
+      const textNode=Array.from(a.childNodes).find(n=>n.nodeType===Node.TEXT_NODE);
+      const text=(textNode?textNode.textContent:'').trim();
+      if(text.toLowerCase()===urlCat.toLowerCase())a.classList.add('active');
+      else a.classList.remove('active');
+    });
+    renderAll();
+  }
 });
 
 function updateDate(){
@@ -479,21 +493,10 @@ function removeBookmark(i){
 }
 
 // ══════════════════════════
-//  ARTICLE MODAL
+//  ARTICLE DETAIL PAGE
 // ══════════════════════════
 function openArticle(id){
-  const a=allArticles.find(x=>x.id===id);
-  if(!a)return;
-  currentArticle=a;
-  document.getElementById('am-img').src=img(a.urlToImage);
-  document.getElementById('am-category').textContent=a.category;
-  document.getElementById('am-title').textContent=a.title;
-  document.getElementById('am-cat').textContent=a.category+' · '+a.source?.name;
-  document.getElementById('am-meta').innerHTML=`<span>📰 ${a.source?.name||'News Portal'}</span><span>🕐 ${timeAgo(a.publishedAt)}</span><span>👍 ${a.upvotes}</span><span>👎 ${a.downvotes}</span>`;
-  document.getElementById('am-up').textContent=a.upvotes;
-  document.getElementById('am-dn').textContent=a.downvotes;
-  document.getElementById('am-body').innerHTML=`<p>${a.description||'Full article content would appear here. This portal uses a live News API to fetch real headlines.'}</p><p style="margin-top:14px;color:var(--muted);font-size:.85rem;">Continue reading on the source website for the full story.</p>`;
-  openModal('article-modal');
+  window.location.href='news_detail.php?id='+id;
 }
 
 // ══════════════════════════
