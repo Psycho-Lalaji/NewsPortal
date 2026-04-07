@@ -47,11 +47,11 @@ if (!in_array($role, ['user', 'editor'], true)) {
             <?php if ($role === 'editor') : ?>
                 <a href="news-form.php"><div class="card">
                     <h3>Create News</h3>
-                    <p>Write and submit new news for approval.</p>
+                    <p1 >Write and submit new news for approval.</p>
                 </div></a>
             <?php endif; ?>
 
-            <a href="#"><div class="card">
+            <a href="edit-news.php"><div class="card">
                 <h3>Edit News</h3>
                 <p>Modify existing news and update content.</p>
             </div></a>
