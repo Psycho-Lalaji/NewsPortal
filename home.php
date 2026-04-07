@@ -105,9 +105,12 @@
 
       <!-- Bookmarks -->
       <div class="widget">
-        <div class="widget-hdr">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-          Saved Articles
+        <div class="widget-hdr" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:8px;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            Saved Articles
+          </span>
+          <a href="saved_news.php" style="font-size:.72rem;color:var(--bright);text-decoration:none;font-weight:700;letter-spacing:.04em;" title="View all saved articles">View All →</a>
         </div>
         <div class="bm-list" id="bm-list">
           <div style="padding:16px 18px;font-size:.82rem;color:var(--muted);">No saved articles yet.</div>
