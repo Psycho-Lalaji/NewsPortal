@@ -1,14 +1,49 @@
 <?php
 require 'db.php';
 
-if (isset($_SESSION['user_id'])) {
-    $role = $_SESSION['user_role'] ?? '';
+function normalize_role($role)
+{
+    $role = strtolower(trim((string) $role));
+
+    if (in_array($role, ['admin', 'editor', 'user'], true)) {
+        return $role;
+    }
+
+    return 'user';
+}
+
+function redirect_by_role($role)
+{
     if ($role === 'admin') {
         header('Location: admin_dashboard.php');
-    } else {
+    } elseif ($role === 'editor') {
         header('Location: dashboard.php');
+    } else {
+        header('Location: home.php');
     }
+
     exit;
+}
+
+if (isset($_SESSION['user_id'])) {
+    $userId = (int) $_SESSION['user_id'];
+    $role = normalize_role($_SESSION['user_role'] ?? '');
+
+    $sessionStmt = $conn->prepare('SELECT role FROM users WHERE id = ? LIMIT 1');
+    if ($sessionStmt !== false) {
+        $sessionStmt->bind_param('i', $userId);
+        $sessionStmt->execute();
+        $sessionResult = $sessionStmt->get_result();
+        $sessionUser = $sessionResult ? $sessionResult->fetch_assoc() : null;
+        $sessionStmt->close();
+
+        if ($sessionUser) {
+            $role = normalize_role($sessionUser['role'] ?? '');
+        }
+    }
+
+    $_SESSION['user_role'] = $role;
+    redirect_by_role($role);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -40,14 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     session_regenerate_id(true);
     $_SESSION['user_id'] = (int) $user['id'];
     $_SESSION['user_name'] = $user['username'];
-    $_SESSION['user_role'] = $user['role'];
+    $_SESSION['user_role'] = normalize_role($user['role'] ?? '');
 
-    if ($user['role'] === 'admin') {
-        header('Location: admin_dashboard.php');
-    } else {
-        header('Location: dashboard.php');
-    }
-    exit;
+    redirect_by_role($_SESSION['user_role']);
 }
 ?>
 <!DOCTYPE html>
