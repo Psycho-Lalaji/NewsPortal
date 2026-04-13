@@ -353,7 +353,7 @@ $conn->close();
     </div>
 </div>
 
-<footer>Copyright <?php echo e(date('Y')); ?> PressCore - News loaded from approved editor submissions.</footer>
+<footer>Copyright <?php echo e(date('Y')); ?> Ekata - News loaded from approved editor submissions.</footer>
 
 </body>
 </html>
