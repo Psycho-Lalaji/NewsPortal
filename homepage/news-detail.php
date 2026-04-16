@@ -1,5 +1,7 @@
 <?php
-require 'db.php';
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 
 function e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
@@ -19,67 +21,116 @@ function status_label($s) {
     return strtolower(trim((string)$s)) === 'pending' ? 'Pending' : 'Published';
 }
 
-$id = (int)($_GET['id'] ?? 0);
-if ($id <= 0) { header('Location: home.php'); exit; }
+function safe_trim_width($text, $width) {
+    $text = (string)$text;
+    if (function_exists('mb_strimwidth')) {
+        return mb_strimwidth($text, 0, $width, '...');
+    }
+
+    return strlen($text) > $width ? substr($text, 0, max(0, $width - 3)) . '...' : $text;
+}
+
+function detail_url($id = null) {
+    return '/news-details.php';
+}
 
 $currentRole = strtolower(trim((string)($_SESSION['user_role'] ?? '')));
-$isPrivileged = in_array($currentRole, ['admin', 'editor'], true);
-$statusCond  = $isPrivileged ? "n.status IN ('approved','pending')" : "n.status = 'approved'";
-
 $dashboardUrl = '';
-if ($currentRole === 'admin') $dashboardUrl = 'admin_dashboard.php';
-elseif ($currentRole === 'editor') $dashboardUrl = 'dashboard.php';
+if ($currentRole === 'admin') $dashboardUrl = '../admin_dashboard.php';
+elseif ($currentRole === 'editor') $dashboardUrl = '../dashboard.php';
 
-/* main article */
-$stmt = $conn->prepare(
-    "SELECT n.id, n.title, n.summary, n.category, n.media_path, n.media_type,
-            n.author_name, n.created_at, n.status, u.username AS editor_username
-     FROM news_posts n
-     LEFT JOIN users u ON n.created_by = u.id
-     WHERE n.id = ? AND $statusCond LIMIT 1"
-);
-$stmt->bind_param('i', $id);
-$stmt->execute();
-$article = $stmt->get_result()->fetch_assoc();
-$stmt->close();
-
-if (!$article) { header('Location: home.php'); exit; }
+$article = [
+    'id' => 9999,
+    'title' => 'Kathmandu Launches Electric Bus Corridor to Reduce Peak-Hour Traffic',
+    'summary' => "Kathmandu Metropolitan City has launched its first dedicated electric bus corridor connecting Kalanki, New Baneshwor, and Koteshwor. The pilot service began Monday morning with 18 buses operating at 12-minute intervals during rush hours.\n\nCity officials say the corridor is expected to cut average travel time by 20 percent and reduce roadside emissions in high-density areas. A three-month performance review will decide whether the route is expanded to additional ring-road segments.",
+    'category' => 'City',
+    'media_path' => '',
+    'media_type' => '',
+    'author_name' => 'Rina Shrestha',
+    'created_at' => '2026-04-12 08:30:00',
+    'status' => 'approved',
+    'editor_username' => 'city_editor'
+];
 
 $cat = $article['category'];
 
-/* related same category */
-$stmt2 = $conn->prepare(
-    "SELECT n.id, n.title, n.category, n.media_path, n.media_type,
-            n.author_name, n.created_at, n.status, u.username AS editor_username
-     FROM news_posts n
-     LEFT JOIN users u ON n.created_by = u.id
-     WHERE n.category = ? AND n.id != ? AND $statusCond
-     ORDER BY n.created_at DESC LIMIT 4"
-);
-$stmt2->bind_param('si', $cat, $id);
-$stmt2->execute();
-$related = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
-$stmt2->close();
+$related = [
+    [
+        'id' => 9101,
+        'title' => 'Public Transport Expansion Plan Announced',
+        'category' => 'City',
+        'media_path' => '',
+        'media_type' => '',
+        'author_name' => 'News Desk',
+        'created_at' => '2026-04-12 06:10:00',
+        'status' => 'approved',
+        'editor_username' => 'editor_1'
+    ],
+    [
+        'id' => 9102,
+        'title' => 'Schools Prepare for New Academic Session',
+        'category' => 'Education',
+        'media_path' => '',
+        'media_type' => '',
+        'author_name' => 'Education Beat',
+        'created_at' => '2026-04-11 17:40:00',
+        'status' => 'approved',
+        'editor_username' => 'editor_2'
+    ],
+    [
+        'id' => 9103,
+        'title' => 'Monsoon Safety Guidelines Released',
+        'category' => 'Weather',
+        'media_path' => '',
+        'media_type' => '',
+        'author_name' => 'Weather Team',
+        'created_at' => '2026-04-11 14:20:00',
+        'status' => 'approved',
+        'editor_username' => 'editor_3'
+    ],
+    [
+        'id' => 9104,
+        'title' => 'Local Business Festival Draws Large Crowd',
+        'category' => 'Business',
+        'media_path' => '',
+        'media_type' => '',
+        'author_name' => 'Market Reporter',
+        'created_at' => '2026-04-10 19:05:00',
+        'status' => 'approved',
+        'editor_username' => 'editor_4'
+    ]
+];
 
-/* recent for sidebar */
-$stmt3 = $conn->prepare(
-    "SELECT n.id, n.title, n.category, n.created_at, n.status,
-            n.author_name, u.username AS editor_username
-     FROM news_posts n
-     LEFT JOIN users u ON n.created_by = u.id
-     WHERE $statusCond ORDER BY n.created_at DESC LIMIT 6"
-);
-$stmt3->execute();
-$recent = $stmt3->get_result()->fetch_all(MYSQLI_ASSOC);
-$stmt3->close();
+$recent = [
+    $article,
+    $related[0],
+    $related[1],
+    $related[2],
+    $related[3],
+    [
+        'id' => 9105,
+        'title' => 'Healthcare Camp Serves Hundreds in Ward 7',
+        'category' => 'Health',
+        'created_at' => '2026-04-10 09:15:00',
+        'status' => 'approved',
+        'author_name' => 'Health Desk',
+        'editor_username' => 'editor_5'
+    ]
+];
 
-/* ticker */
-$tr = $conn->query("SELECT title FROM news_posts WHERE $statusCond ORDER BY created_at DESC LIMIT 8");
-$tickerItems = $tr ? $tr->fetch_all(MYSQLI_ASSOC) : [];
+$tickerItems = [
+    ['title' => $article['title']],
+    ['title' => $related[0]['title']],
+    ['title' => $related[1]['title']],
+    ['title' => $related[2]['title']],
+    ['title' => $related[3]['title']],
+    ['title' => 'Valley traffic police report smoother evening commute on pilot route']
+];
 
-$conn->close();
-
-$pageUrl = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$uri = $_SERVER['REQUEST_URI'] ?? '';
+$pageUrl = $scheme . '://' . $host . $uri;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -87,9 +138,9 @@ $pageUrl = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= e($article['title']) ?> — EkataNews</title>
-<meta name="description" content="<?= e(mb_strimwidth((string)($article['summary'] ?? ''), 0, 160, '…')) ?>">
-<link rel="stylesheet" href="home.css">
-<link rel="stylesheet" href="news-detail.css">
+<meta name="description" content="<?= e(safe_trim_width((string)($article['summary'] ?? ''), 160)) ?>">
+<link rel="stylesheet" href="/home.css">
+<link rel="stylesheet" href="/homepage/news-detail.css">
 </head>
 <body>
 
@@ -115,25 +166,25 @@ $pageUrl = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 
 <!-- HEADER -->
 <header>
-    <a href="home.php" class="logo"><span class="logo-dot"></span>Ekata<span>News</span></a>
+    <a href="../home.php" class="logo"><span class="logo-dot"></span>Ekata<span>News</span></a>
     <div class="header-actions">
         <?php if (isset($_SESSION['user_id'])): ?>
             <span class="welcome-user">Hi, <?= e($_SESSION['user_name'] ?? 'User') ?></span>
             <?php if ($dashboardUrl !== ''): ?>
                 <a class="btn btn-solid" href="<?= e($dashboardUrl) ?>">Dashboard</a>
             <?php endif; ?>
-            <a class="btn btn-outline" href="logout.php">Logout</a>
+            <a class="btn btn-outline" href="../logout.php">Logout</a>
         <?php else: ?>
-            <a class="btn btn-outline" href="login.php">Login</a>
-            <a class="btn btn-solid" href="register.php">Register</a>
+            <a class="btn btn-outline" href="../login.php">Login</a>
+            <a class="btn btn-solid" href="../register.php">Register</a>
         <?php endif; ?>
     </div>
 </header>
 
 <!-- NAV -->
 <nav>
-    <a href="home.php">All <span class="live-badge">LIVE</span></a>
-    <a href="home.php?category=<?= urlencode($cat) ?>" class="active"><?= e($cat) ?></a>
+    <a href="../home.php">All <span class="live-badge">LIVE</span></a>
+    <a href="../home.php?category=<?= urlencode($cat) ?>" class="active"><?= e($cat) ?></a>
 </nav>
 
 <!-- ARTICLE -->
@@ -141,11 +192,11 @@ $pageUrl = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
     <main>
 
         <nav class="breadcrumb" aria-label="breadcrumb">
-            <a href="home.php">Home</a>
+            <a href="../home.php">Home</a>
             <span class="sep">›</span>
-            <a href="home.php?category=<?= urlencode($cat) ?>"><?= e($cat) ?></a>
+            <a href="../home.php?category=<?= urlencode($cat) ?>"><?= e($cat) ?></a>
             <span class="sep">›</span>
-            <span style="color:var(--navy);text-transform:none;"><?= e(mb_strimwidth($article['title'], 0, 55, '…')) ?></span>
+            <span style="color:var(--navy);text-transform:none;"><?= e(safe_trim_width($article['title'], 55)) ?></span>
         </nav>
 
         <div class="d-cat-badge"><?= e($cat) ?> &nbsp;·&nbsp; <?= e(status_label($article['status'])) ?></div>
@@ -214,9 +265,9 @@ $pageUrl = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
         <div class="d-tags-section">
             <div class="d-tags-label">Topics</div>
             <div class="d-tags">
-                <a class="d-tag" href="home.php?category=<?= urlencode($cat) ?>"><?= e($cat) ?></a>
-                <a class="d-tag" href="home.php?q=<?= urlencode(author_name($article)) ?>"><?= e(author_name($article)) ?></a>
-                <a class="d-tag" href="home.php">EkataNews</a>
+                <a class="d-tag" href="../home.php?category=<?= urlencode($cat) ?>"><?= e($cat) ?></a>
+                <a class="d-tag" href="../home.php?q=<?= urlencode(author_name($article)) ?>"><?= e(author_name($article)) ?></a>
+                <a class="d-tag" href="../home.php">EkataNews</a>
             </div>
         </div>
 
@@ -233,7 +284,7 @@ $pageUrl = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
                     <p class="loading-row">No related stories found.</p>
                 <?php else: ?>
                     <?php foreach ($related as $r): ?>
-                    <a class="rel-item" href="news-detail.php?id=<?= (int)$r['id'] ?>">
+                    <a class="rel-item" href="<?= e(detail_url($r['id'])) ?>">
                         <div class="rel-thumb">
                             <?php if (($r['media_type'] ?? '') === 'image' && !empty($r['media_path'])): ?>
                                 <img src="<?= e($r['media_path']) ?>" alt="<?= e($r['title']) ?>">
@@ -261,7 +312,7 @@ $pageUrl = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
                 <?php else: ?>
                     <?php foreach ($recent as $i => $item): ?>
                     <a class="trend-item <?= $i === 0 ? 'top' : '' ?>"
-                       href="news-detail.php?id=<?= (int)$item['id'] ?>"
+                              href="<?= e(detail_url($item['id'])) ?>"
                        style="text-decoration:none;">
                         <div class="trend-num"><?= str_pad($i + 1, 2, '0', STR_PAD_LEFT) ?></div>
                         <div>
@@ -276,7 +327,7 @@ $pageUrl = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
             </div>
         </div>
 
-        <a class="btn btn-solid" href="home.php" style="display:block;text-align:center;">← Back to Home</a>
+        <a class="btn btn-solid" href="../home.php" style="display:block;text-align:center;">← Back to Home</a>
 
     </aside>
 </div>

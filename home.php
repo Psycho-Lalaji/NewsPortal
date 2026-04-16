@@ -46,6 +46,11 @@ function build_home_url($category, $search)
     return 'home.php' . ($params ? '?' . http_build_query($params) : '');
 }
 
+function detail_url($id)
+{
+    return 'news-details.php';
+}
+
 function news_matches_filters(array $item, $categoryFilter, $searchQuery)
 {
     if ($categoryFilter !== '' && strcasecmp((string) ($item['category'] ?? ''), $categoryFilter) !== 0) {
@@ -204,7 +209,11 @@ $conn->close();
             </div>
 
             <?php if ($heroItem) : ?>
-                <article class="hero-card">
+                <article class="hero-card clickable-news"
+                         data-detail-url="<?php echo e(detail_url($heroItem['id'])); ?>"
+                         tabindex="0"
+                         role="link"
+                         aria-label="Read story: <?php echo e($heroItem['title']); ?>">
                     <?php if (($heroItem['media_type'] ?? '') === 'image' && !empty($heroItem['media_path'])) : ?>
                         <img src="<?php echo e($heroItem['media_path']); ?>" alt="<?php echo e($heroItem['title']); ?>">
                     <?php elseif (($heroItem['media_type'] ?? '') === 'video' && !empty($heroItem['media_path'])) : ?>
@@ -243,7 +252,11 @@ $conn->close();
             <?php else : ?>
                 <div class="cat-strip">
                     <?php foreach ($latestItems as $item) : ?>
-                        <article class="cat-card">
+                        <article class="cat-card clickable-news"
+                                 data-detail-url="<?php echo e(detail_url($item['id'])); ?>"
+                                 tabindex="0"
+                                 role="link"
+                                 aria-label="Read story: <?php echo e($item['title']); ?>">
                             <?php if (($item['media_type'] ?? '') === 'image' && !empty($item['media_path'])) : ?>
                                 <img src="<?php echo e($item['media_path']); ?>" alt="<?php echo e($item['title']); ?>">
                             <?php elseif (($item['media_type'] ?? '') === 'video' && !empty($item['media_path'])) : ?>
@@ -275,7 +288,11 @@ $conn->close();
             <?php else : ?>
                 <div class="side-stack">
                     <?php foreach ($moreItems as $item) : ?>
-                        <article class="side-card">
+                        <article class="side-card clickable-news"
+                                 data-detail-url="<?php echo e(detail_url($item['id'])); ?>"
+                                 tabindex="0"
+                                 role="link"
+                                 aria-label="Read story: <?php echo e($item['title']); ?>">
                             <?php if (($item['media_type'] ?? '') === 'image' && !empty($item['media_path'])) : ?>
                                 <img src="<?php echo e($item['media_path']); ?>" alt="<?php echo e($item['title']); ?>">
                             <?php else : ?>
@@ -321,7 +338,11 @@ $conn->close();
                         <div class="loading-row">No approved stories yet.</div>
                     <?php else : ?>
                         <?php foreach ($sidebarItems as $index => $item) : ?>
-                            <div class="trend-item <?php echo $index === 0 ? 'top' : ''; ?>">
+                               <div class="trend-item <?php echo $index === 0 ? 'top' : ''; ?> clickable-news"
+                                   data-detail-url="<?php echo e(detail_url($item['id'])); ?>"
+                                   tabindex="0"
+                                   role="link"
+                                   aria-label="Read story: <?php echo e($item['title']); ?>">
                                 <div class="trend-num"><?php echo e(str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT)); ?></div>
                                 <div>
                                     <div class="trend-title"><?php echo e($item['title']); ?></div>
@@ -354,6 +375,27 @@ $conn->close();
 </div>
 
 <footer>Copyright <?php echo e(date('Y')); ?> Ekata - News loaded from approved editor submissions.</footer>
+
+<script>
+document.querySelectorAll('.clickable-news[data-detail-url]').forEach(function (card) {
+    card.addEventListener('click', function (event) {
+        if (event.target.closest('a, button, input, textarea, select, video, audio')) {
+            return;
+        }
+
+        window.location.href = card.getAttribute('data-detail-url');
+    });
+
+    card.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+        }
+
+        event.preventDefault();
+        window.location.href = card.getAttribute('data-detail-url');
+    });
+});
+</script>
 
 </body>
 </html>

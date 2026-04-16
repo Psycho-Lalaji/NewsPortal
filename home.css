@@ -248,6 +248,15 @@ nav .live-badge {
   border-radius: 3px;
 }
 
+.clickable-news {
+  cursor: pointer;
+}
+
+.clickable-news:focus-visible {
+  outline: 3px solid rgba(41, 121, 255, 0.45);
+  outline-offset: 3px;
+}
+
 .hero-card {
   border-radius: 10px;
   overflow: hidden;
