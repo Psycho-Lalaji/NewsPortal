@@ -37,12 +37,6 @@ if (!in_array($role, ['user', 'editor'], true)) {
             <p>Manage your news, create new content, and edit existing posts here.</p>
         </div>
 
-        <?php if ($role === 'editor') : ?>
-            <div class="primary-action-wrap">
-                <a class="primary-action" href="news-form.php">Create News</a>
-            </div>
-        <?php endif; ?>
-
         <div class="action-cards">
             <?php if ($role === 'editor') : ?>
                 <a href="news-form.php"><div class="card">
