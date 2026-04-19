@@ -1,4 +1,6 @@
 <?php
+require __DIR__ . '/../db.php';
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
@@ -31,7 +33,18 @@ function safe_trim_width($text, $width) {
 }
 
 function detail_url($id = null) {
-    return '/news-details.php';
+    $id = (int)$id;
+    if ($id <= 0) {
+        return '/news-details.php';
+    }
+
+    return '/news-details.php?id=' . $id;
+}
+
+function normalize_news_row(array $row) {
+    $category = trim((string)($row['category'] ?? ''));
+    $row['category'] = $category !== '' ? $category : 'Uncategorized';
+    return $row;
 }
 
 $currentRole = strtolower(trim((string)($_SESSION['user_role'] ?? '')));
@@ -39,98 +52,103 @@ $dashboardUrl = '';
 if ($currentRole === 'admin') $dashboardUrl = '../admin_dashboard.php';
 elseif ($currentRole === 'editor') $dashboardUrl = '../dashboard.php';
 
-$article = [
-    'id' => 9999,
-    'title' => 'Kathmandu Launches Electric Bus Corridor to Reduce Peak-Hour Traffic',
-    'summary' => "Kathmandu Metropolitan City has launched its first dedicated electric bus corridor connecting Kalanki, New Baneshwor, and Koteshwor. The pilot service began Monday morning with 18 buses operating at 12-minute intervals during rush hours.\n\nCity officials say the corridor is expected to cut average travel time by 20 percent and reduce roadside emissions in high-density areas. A three-month performance review will decide whether the route is expanded to additional ring-road segments.",
-    'category' => 'City',
-    'media_path' => '',
-    'media_type' => '',
-    'author_name' => 'Rina Shrestha',
-    'created_at' => '2026-04-12 08:30:00',
-    'status' => 'approved',
-    'editor_username' => 'city_editor'
-];
+$statusCondition = "n.status = 'approved'";
+if (in_array($currentRole, ['admin', 'editor'], true)) {
+    $statusCondition = "n.status IN ('approved', 'pending')";
+}
+
+$articleId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+if ($articleId === null || $articleId === false) {
+    $conn->close();
+    header('Location: /home.php');
+    exit;
+}
+
+$baseSelect = "SELECT n.id, n.title, n.summary, n.category, n.media_path, n.media_type, n.author_name, n.created_at, n.status,
+                      u.username AS editor_username
+               FROM news_posts n
+               LEFT JOIN users u ON n.created_by = u.id";
+
+$article = null;
+$articleQuery = "$baseSelect WHERE n.id = $articleId AND $statusCondition LIMIT 1";
+$articleResult = $conn->query($articleQuery);
+if ($articleResult instanceof mysqli_result) {
+    $row = $articleResult->fetch_assoc();
+    $article = $row ? normalize_news_row($row) : null;
+    $articleResult->free();
+}
+
+$articleNotFound = !is_array($article);
+if ($articleNotFound) {
+    http_response_code(404);
+    $article = [
+        'id' => 0,
+        'title' => 'News article not found',
+        'summary' => 'The selected story is unavailable or you do not have permission to view it.',
+        'category' => 'News',
+        'media_path' => '',
+        'media_type' => '',
+        'author_name' => '',
+        'created_at' => date('Y-m-d H:i:s'),
+        'status' => 'approved',
+        'editor_username' => ''
+    ];
+}
 
 $cat = $article['category'];
+$escapedCategory = $conn->real_escape_string($cat);
 
-$related = [
-    [
-        'id' => 9101,
-        'title' => 'Public Transport Expansion Plan Announced',
-        'category' => 'City',
-        'media_path' => '',
-        'media_type' => '',
-        'author_name' => 'News Desk',
-        'created_at' => '2026-04-12 06:10:00',
-        'status' => 'approved',
-        'editor_username' => 'editor_1'
-    ],
-    [
-        'id' => 9102,
-        'title' => 'Schools Prepare for New Academic Session',
-        'category' => 'Education',
-        'media_path' => '',
-        'media_type' => '',
-        'author_name' => 'Education Beat',
-        'created_at' => '2026-04-11 17:40:00',
-        'status' => 'approved',
-        'editor_username' => 'editor_2'
-    ],
-    [
-        'id' => 9103,
-        'title' => 'Monsoon Safety Guidelines Released',
-        'category' => 'Weather',
-        'media_path' => '',
-        'media_type' => '',
-        'author_name' => 'Weather Team',
-        'created_at' => '2026-04-11 14:20:00',
-        'status' => 'approved',
-        'editor_username' => 'editor_3'
-    ],
-    [
-        'id' => 9104,
-        'title' => 'Local Business Festival Draws Large Crowd',
-        'category' => 'Business',
-        'media_path' => '',
-        'media_type' => '',
-        'author_name' => 'Market Reporter',
-        'created_at' => '2026-04-10 19:05:00',
-        'status' => 'approved',
-        'editor_username' => 'editor_4'
-    ]
-];
+$related = [];
+if (!$articleNotFound) {
+    $relatedQuery = "$baseSelect
+                     WHERE n.id <> $articleId AND $statusCondition
+                     ORDER BY (n.category = '$escapedCategory') DESC, n.created_at DESC
+                     LIMIT 4";
+    $relatedResult = $conn->query($relatedQuery);
+    if ($relatedResult instanceof mysqli_result) {
+        while ($row = $relatedResult->fetch_assoc()) {
+            $related[] = normalize_news_row($row);
+        }
+        $relatedResult->free();
+    }
+}
 
-$recent = [
-    $article,
-    $related[0],
-    $related[1],
-    $related[2],
-    $related[3],
-    [
-        'id' => 9105,
-        'title' => 'Healthcare Camp Serves Hundreds in Ward 7',
-        'category' => 'Health',
-        'created_at' => '2026-04-10 09:15:00',
-        'status' => 'approved',
-        'author_name' => 'Health Desk',
-        'editor_username' => 'editor_5'
-    ]
-];
+$recent = [];
+$recentQuery = "$baseSelect WHERE $statusCondition ORDER BY n.created_at DESC LIMIT 6";
+$recentResult = $conn->query($recentQuery);
+if ($recentResult instanceof mysqli_result) {
+    while ($row = $recentResult->fetch_assoc()) {
+        $recent[] = normalize_news_row($row);
+    }
+    $recentResult->free();
+}
 
-$tickerItems = [
-    ['title' => $article['title']],
-    ['title' => $related[0]['title']],
-    ['title' => $related[1]['title']],
-    ['title' => $related[2]['title']],
-    ['title' => $related[3]['title']],
-    ['title' => 'Valley traffic police report smoother evening commute on pilot route']
-];
+if (!$recent) {
+    $recent[] = $article;
+}
+
+$tickerItems = [];
+$seenTickerTitles = [];
+foreach (array_merge([$article], $related, $recent) as $item) {
+    $title = trim((string)($item['title'] ?? ''));
+    if ($title === '' || isset($seenTickerTitles[$title])) {
+        continue;
+    }
+
+    $seenTickerTitles[$title] = true;
+    $tickerItems[] = ['title' => $title];
+
+    if (count($tickerItems) >= 8) {
+        break;
+    }
+}
 
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $uri = $_SERVER['REQUEST_URI'] ?? '';
 $pageUrl = $scheme . '://' . $host . $uri;
+
+$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">

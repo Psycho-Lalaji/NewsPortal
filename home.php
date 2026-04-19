@@ -48,7 +48,12 @@ function build_home_url($category, $search)
 
 function detail_url($id)
 {
-    return 'news-details.php';
+    $id = (int) $id;
+    if ($id <= 0) {
+        return 'news-details.php';
+    }
+
+    return 'news-details.php?id=' . $id;
 }
 
 function news_matches_filters(array $item, $categoryFilter, $searchQuery)
