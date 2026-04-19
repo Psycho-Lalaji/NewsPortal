@@ -56,24 +56,53 @@ function detail_url($id)
     return 'news-details.php?id=' . $id;
 }
 
+function normalize_search_text($value)
+{
+    $value = trim((string) $value);
+    if ($value === '') {
+        return '';
+    }
+
+    $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $normalized = preg_replace('/\s+/', ' ', $value);
+    if (is_string($normalized)) {
+        return trim($normalized);
+    }
+
+    return trim($value);
+}
+
 function news_matches_filters(array $item, $categoryFilter, $searchQuery)
 {
     if ($categoryFilter !== '' && strcasecmp((string) ($item['category'] ?? ''), $categoryFilter) !== 0) {
         return false;
     }
 
-    if ($searchQuery === '') {
+    $normalizedQuery = normalize_search_text($searchQuery);
+    if ($normalizedQuery === '') {
         return true;
     }
 
-    $text = strtolower(
+    $searchBlob = normalize_search_text(
         trim((string) ($item['title'] ?? '')) . ' ' .
         trim((string) ($item['summary'] ?? '')) . ' ' .
         trim((string) ($item['author_name'] ?? '')) . ' ' .
-        trim((string) ($item['editor_username'] ?? ''))
+        trim((string) ($item['editor_username'] ?? '')) . ' ' .
+        trim((string) ($item['category'] ?? ''))
     );
 
-    return strpos($text, strtolower($searchQuery)) !== false;
+    $terms = preg_split('/\s+/', $normalizedQuery, -1, PREG_SPLIT_NO_EMPTY);
+    if (!is_array($terms) || !$terms) {
+        $terms = [$normalizedQuery];
+    }
+
+    foreach ($terms as $term) {
+        if (stripos($searchBlob, $term) === false) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 function status_label($status)
@@ -144,6 +173,25 @@ $heroItem = $filteredNews[0] ?? null;
 $latestItems = array_slice($filteredNews, 1, 4);
 $moreItems = array_slice($filteredNews, 5);
 $sidebarItems = array_slice($filteredNews ?: $approvedNews, 0, 6);
+
+$searchIndex = array_map(function ($item) {
+    return [
+        'id' => (int) ($item['id'] ?? 0),
+        'title' => (string) ($item['title'] ?? ''),
+        'summary' => (string) ($item['summary'] ?? ''),
+        'author' => author_name($item),
+        'category' => (string) ($item['category'] ?? ''),
+        'publishedAt' => format_published_at($item['created_at'] ?? ''),
+    ];
+}, $approvedNews);
+
+$searchIndexJson = json_encode(
+    $searchIndex,
+    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+);
+if ($searchIndexJson === false) {
+    $searchIndexJson = '[]';
+}
 
 $conn->close();
 ?>
@@ -318,14 +366,29 @@ $conn->close();
         <aside class="sidebar">
             <div class="search-box">
                 <h3>Search News</h3>
-                <form method="GET" action="home.php">
+                <form method="GET" action="home.php" id="newsSearchForm" autocomplete="off">
                     <?php if ($categoryFilter !== '') : ?>
                         <input type="hidden" name="category" value="<?php echo e($categoryFilter); ?>">
                     <?php endif; ?>
 
-                    <div class="search-row">
-                        <input type="text" name="q" placeholder="Keywords..." value="<?php echo e($searchQuery); ?>">
-                        <button type="submit">Go</button>
+                    <div class="search-modal-wrap">
+                        <div class="search-row">
+                            <input
+                                type="text"
+                                name="q"
+                                id="searchInput"
+                                placeholder="Keywords..."
+                                value="<?php echo e($searchQuery); ?>"
+                                aria-label="Search news"
+                                aria-controls="searchModal"
+                                autocomplete="off"
+                            >
+                            <button type="submit">Go</button>
+                        </div>
+
+                        <div class="search-modal" id="searchModal" hidden>
+                            <div class="search-modal-list" id="searchModalList"></div>
+                        </div>
                     </div>
                 </form>
 
@@ -400,6 +463,119 @@ document.querySelectorAll('.clickable-news[data-detail-url]').forEach(function (
         window.location.href = card.getAttribute('data-detail-url');
     });
 });
+
+var searchForm = document.getElementById('newsSearchForm');
+var searchInput = document.getElementById('searchInput');
+var searchModal = document.getElementById('searchModal');
+var searchModalList = document.getElementById('searchModalList');
+var searchIndex = <?php echo $searchIndexJson; ?>;
+
+function normalizeClientSearch(value) {
+    return String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function hideSearchModal() {
+    if (!searchModal || !searchModalList) {
+        return;
+    }
+
+    searchModal.hidden = true;
+    searchModalList.innerHTML = '';
+}
+
+function buildSearchResultItem(item) {
+    var link = document.createElement('a');
+    link.className = 'search-result-item';
+    link.href = 'news-details.php?id=' + encodeURIComponent(item.id);
+
+    var title = document.createElement('div');
+    title.className = 'search-result-title';
+    title.textContent = item.title || 'Untitled story';
+
+    var meta = document.createElement('div');
+    meta.className = 'search-result-meta';
+    var category = item.category || 'Uncategorized';
+    var publishedAt = item.publishedAt || '';
+    meta.textContent = category + (publishedAt ? ' - ' + publishedAt : '');
+
+    link.appendChild(title);
+    link.appendChild(meta);
+    return link;
+}
+
+function renderSearchResults(rawQuery) {
+    if (!searchModal || !searchModalList) {
+        return;
+    }
+
+    var query = normalizeClientSearch(rawQuery);
+    if (!query) {
+        hideSearchModal();
+        return;
+    }
+
+    var terms = query.split(' ').filter(function (term) {
+        return term.length > 0;
+    });
+
+    var matches = searchIndex.filter(function (item) {
+        var blob = normalizeClientSearch(
+            (item.title || '') + ' ' +
+            (item.summary || '') + ' ' +
+            (item.author || '') + ' ' +
+            (item.category || '')
+        );
+
+        return terms.every(function (term) {
+            return blob.indexOf(term) !== -1;
+        });
+    }).slice(0, 7);
+
+    searchModalList.innerHTML = '';
+    searchModal.hidden = false;
+
+    if (!matches.length) {
+        var emptyNode = document.createElement('div');
+        emptyNode.className = 'search-result-empty';
+        emptyNode.textContent = 'No matching stories found.';
+        searchModalList.appendChild(emptyNode);
+        return;
+    }
+
+    matches.forEach(function (item) {
+        searchModalList.appendChild(buildSearchResultItem(item));
+    });
+}
+
+if (searchForm && searchInput) {
+    searchForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        renderSearchResults(searchInput.value);
+    });
+
+    searchInput.addEventListener('input', function () {
+        renderSearchResults(searchInput.value);
+    });
+
+    searchInput.addEventListener('focus', function () {
+        if (searchInput.value.trim() !== '') {
+            renderSearchResults(searchInput.value);
+        }
+    });
+
+    searchInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            hideSearchModal();
+        }
+    });
+
+    document.addEventListener('click', function (event) {
+        var insideSearch = searchForm.contains(event.target) || (searchModal && searchModal.contains(event.target));
+        if (!insideSearch) {
+            hideSearchModal();
+        }
+    });
+}
 </script>
 
 </body>
