@@ -47,7 +47,7 @@ Use this simple flow:
 
 ```bash
 git checkout main
-git pull origin main
+git checkout main
 git checkout -b feature/<branch-name>
 ```
 
