@@ -169,7 +169,7 @@ $conn->close();
                                     <td>
                                         <form method="POST" class="review-actions">
                                             <input type="hidden" name="post_id" value="<?php echo (int) $item['id']; ?>">
-                                            <button type="submit" name="action" value="approved" class="btn-approve">Approve</button>
+                                            <button type="submit" name="action" value="approved" class="btn-aprove">Approve</button>
                                             <button type="submit" name="action" value="rejected" class="btn-reject">Reject</button>
                                         </form>
                                     </td>
