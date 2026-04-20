@@ -1,6 +1,7 @@
 <?php
 require 'db.php';
 
+// This endpoint only accepts form submissions from the admin panel.
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: manage_users.php");
     exit;
@@ -16,12 +17,14 @@ if (($_SESSION['user_role'] ?? '') !== 'admin') {
     exit;
 }
 
+// Validate CSRF token to prevent forged account-creation requests.
 $csrfToken = $_POST['csrf_token'] ?? '';
 if ($csrfToken === '' || !hash_equals($_SESSION['csrf_token'] ?? '', $csrfToken)) {
     header("Location: manage_users.php?create_status=error&message=" . rawurlencode('Invalid request. Please refresh and try again.'));
     exit;
 }
 
+// Basic input validation before touching the database.
 $username = trim($_POST['username'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
@@ -46,6 +49,7 @@ if (strlen($password) < 8) {
     exit;
 }
 
+// Block duplicates so username/email remain unique.
 $checkStmt = $conn->prepare("SELECT id FROM users WHERE username=? OR email=? LIMIT 1");
 $checkStmt->bind_param("ss", $username, $email);
 $checkStmt->execute();
@@ -60,6 +64,7 @@ if ($checkStmt->num_rows > 0) {
 
 $checkStmt->close();
 
+// Store a hashed password and force the account role to editor.
 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 $role = 'editor';
 

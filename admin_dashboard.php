@@ -1,6 +1,7 @@
 <?php
 session_start();
 
+// Restrict this page to authenticated admins.
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
     exit;
@@ -32,6 +33,7 @@ if (($_SESSION['user_role'] ?? '') !== 'admin') {
             <p>Admin access enabled. You can manage users and system-level settings here.</p>
         </div>
 
+        <!-- Admin entry points for user management and article moderation. -->
         <div class="action-cards">
             <a href="manage_users.php"><div class="card">
                 <h3>Manage Users</h3>

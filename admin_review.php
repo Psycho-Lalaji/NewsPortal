@@ -1,6 +1,7 @@
 <?php
 require 'db.php';
 
+// Admin-only moderation page.
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
     exit;
@@ -14,10 +15,12 @@ if (($_SESSION['user_role'] ?? '') !== 'admin') {
 $statusMessage = '';
 $statusClass = '';
 
+// Handle approve/reject actions submitted from the pending table.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $postId = (int) ($_POST['post_id'] ?? 0);
     $action = $_POST['action'] ?? '';
 
+    // Only allow valid moderation transitions from pending status.
     if ($postId > 0 && in_array($action, ['approved', 'rejected'], true)) {
         $stmt = $conn->prepare(
             "UPDATE news_posts SET status = ? WHERE id = ? AND status = 'pending'"
@@ -55,6 +58,7 @@ if ($statusParam === 'approved') {
     $statusClass = 'status-error';
 }
 
+// Fetch pending submissions for moderation queue.
 $pendingItems = [];
 $stmt = $conn->prepare(
     "SELECT n.id, n.title, n.summary, n.category, n.media_path, n.media_type, n.author_name, n.created_at,
@@ -74,6 +78,7 @@ if ($stmt) {
     $stmt->close();
 }
 
+// Fetch full submission history for admin visibility.
 $allItems = [];
 $stmt = $conn->prepare(
     "SELECT n.id, n.title, n.summary, n.category, n.media_path, n.media_type, n.author_name, n.created_at, n.status,
@@ -169,7 +174,7 @@ $conn->close();
                                     <td>
                                         <form method="POST" class="review-actions">
                                             <input type="hidden" name="post_id" value="<?php echo (int) $item['id']; ?>">
-                                            <button type="submit" name="action" value="approved" class="btn-approve">Approve</button>
+                                            <button type="submit" name="action" value="approved" class="btn-aprove">Approve</button>
                                             <button type="submit" name="action" value="rejected" class="btn-reject">Reject</button>
                                         </form>
                                     </td>
