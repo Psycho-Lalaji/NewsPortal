@@ -231,6 +231,13 @@ $conn->close();
     <div class="header-actions">
         <?php if (isset($_SESSION['user_id'])) : ?>
             <span class="welcome-user">Hi, <?php echo e($_SESSION['user_name'] ?? 'User'); ?></span>
+            <a class="btn btn-outline" href="saved_news.php" title="View your saved articles">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                </svg>
+                Saved
+            </a>
             <?php if ($dashboardUrl !== '') : ?>
                 <a class="btn btn-solid" href="<?php echo e($dashboardUrl); ?>">Dashboard</a>
             <?php endif; ?>

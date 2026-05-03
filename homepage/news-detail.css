@@ -104,6 +104,21 @@
 .rel-title       { font-family: 'Playfair Display', serif; font-size: .88rem; font-weight: 700; color: var(--navy); line-height: 1.35; }
 .rel-time        { font-size: .68rem; color: var(--muted); }
 
+/* Save Button Styles */
+.save-btn {
+    transition: all 0.3s ease;
+}
+
+.save-btn.saved {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: #fff !important;
+}
+
+.save-btn:active {
+    transform: scale(0.95);
+}
+
 @media (max-width: 900px) { .detail-wrap { grid-template-columns: 1fr; } }
 @media (max-width: 560px) {
     .d-title { font-size: 1.5rem; }

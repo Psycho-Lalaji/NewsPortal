@@ -25,6 +25,20 @@ CREATE TABLE IF NOT EXISTS news_posts (
     ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS saved_news (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  news_id INT NOT NULL,
+  saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_saved_news_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_saved_news_article
+    FOREIGN KEY (news_id) REFERENCES news_posts(id)
+    ON DELETE CASCADE,
+  UNIQUE KEY unique_user_news (user_id, news_id)
+);
+
 INSERT INTO users (username, email, password, role)
 VALUES (
   'admin',

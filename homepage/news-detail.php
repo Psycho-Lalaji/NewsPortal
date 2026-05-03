@@ -188,6 +188,13 @@ $conn->close();
     <div class="header-actions">
         <?php if (isset($_SESSION['user_id'])): ?>
             <span class="welcome-user">Hi, <?= e($_SESSION['user_name'] ?? 'User') ?></span>
+            <a class="btn btn-outline" title="View your saved articles">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                </svg>
+                Saved
+            </a>
             <?php if ($dashboardUrl !== ''): ?>
                 <a class="btn btn-solid" href="<?= e($dashboardUrl) ?>">Dashboard</a>
             <?php endif; ?>
@@ -233,6 +240,14 @@ $conn->close();
             </div>
             <div class="d-time"><?= e(format_published_at($article['created_at'])) ?></div>
             <div class="d-share">
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <button class="d-share-btn save-btn" id="saveBtn" title="Save Article" onclick="toggleSaveArticle(<?= $article['id'] ?>)">
+                        <svg id="saveIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                            <polyline points="17 21 17 13 7 13 7 21"/>
+                        </svg>
+                    </button>
+                <?php endif; ?>
                 <a class="d-share-btn" href="#" title="Share" onclick="shareArticle();return false;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
@@ -369,6 +384,75 @@ function shareArticle() {
             .catch(function(){ alert('Copy URL from your address bar.'); });
     }
 }
+
+// Check if article is saved on page load
+<?php if (isset($_SESSION['user_id'])): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    checkIfArticleSaved(<?= $article['id'] ?>);
+});
+
+function checkIfArticleSaved(newsId) {
+    const formData = new FormData();
+    formData.append('action', 'check');
+    formData.append('news_id', newsId);
+
+    fetch('../save_news_action.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.is_saved) {
+            updateSaveButtonState(true);
+        } else {
+            updateSaveButtonState(false);
+        }
+    })
+    .catch(error => console.error('Error checking saved status:', error));
+}
+
+function toggleSaveArticle(newsId) {
+    const saveBtn = document.getElementById('saveBtn');
+    const isSaved = saveBtn.classList.contains('saved');
+    const action = isSaved ? 'unsave' : 'save';
+
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('news_id', newsId);
+
+    fetch('../save_news_action.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateSaveButtonState(!isSaved);
+        } else {
+            alert('Error: ' + (data.message || 'Failed to update'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating article');
+    });
+}
+
+function updateSaveButtonState(isSaved) {
+    const saveBtn = document.getElementById('saveBtn');
+    const saveIcon = document.getElementById('saveIcon');
+    
+    if (isSaved) {
+        saveBtn.classList.add('saved');
+        saveBtn.title = 'Remove from saved';
+        saveIcon.style.fill = 'currentColor';
+    } else {
+        saveBtn.classList.remove('saved');
+        saveBtn.title = 'Save article';
+        saveIcon.style.fill = 'none';
+    }
+}
+<?php endif; ?>
 </script>
 </body>
 </html>
