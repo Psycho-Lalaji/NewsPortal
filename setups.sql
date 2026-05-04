@@ -25,18 +25,16 @@ CREATE TABLE IF NOT EXISTS news_posts (
     ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS saved_news (
+--  for forgot password flow
+CREATE TABLE IF NOT EXISTS password_resets (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
-  news_id INT NOT NULL,
-  saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_saved_news_user
+  token VARCHAR(64) NOT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_reset_user
     FOREIGN KEY (user_id) REFERENCES users(id)
-    ON DELETE CASCADE,
-  CONSTRAINT fk_saved_news_article
-    FOREIGN KEY (news_id) REFERENCES news_posts(id)
-    ON DELETE CASCADE,
-  UNIQUE KEY unique_user_news (user_id, news_id)
+    ON DELETE CASCADE
 );
 
 INSERT INTO users (username, email, password, role)
@@ -49,4 +47,4 @@ VALUES (
 ON DUPLICATE KEY UPDATE role = 'admin';
 
 -- Temporary admin password: Admin@12345
--- Change it right after fir5st login.
+-- Change it right after first login.
