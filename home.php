@@ -1,6 +1,9 @@
 <?php
 require 'db.php';
-session_start();
+require_once 'vote_helpers.php';
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 function e($value)
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
@@ -115,7 +118,45 @@ function status_label($status)
     return 'Published';
 }
 
+function render_vote_controls(array $item, $compact = false)
+{
+    $id = (int) ($item['id'] ?? 0);
+    if ($id <= 0) {
+        return;
+    }
+
+    $upVotes = (int) ($item['up_votes'] ?? 0);
+    $downVotes = (int) ($item['down_votes'] ?? 0);
+    $userVote = (string) ($item['user_vote'] ?? '');
+    $classes = 'vote-box' . ($compact ? ' vote-box--compact' : '');
+    ?>
+    <div class="<?php echo e($classes); ?>"
+         data-vote-box
+         data-news-id="<?php echo e($id); ?>"
+         data-user-vote="<?php echo e($userVote); ?>">
+        <button type="button"
+                class="vote-btn vote-btn--up <?php echo $userVote === 'up' ? 'is-active' : ''; ?>"
+                data-vote-action="up"
+                aria-label="Up vote this story"
+                title="Up vote">
+            <span aria-hidden="true">&uarr;</span>
+            <span data-up-count><?php echo e($upVotes); ?></span>
+        </button>
+        <span class="vote-score" title="Vote score" data-score><?php echo e(vote_score($item)); ?></span>
+        <button type="button"
+                class="vote-btn vote-btn--down <?php echo $userVote === 'down' ? 'is-active' : ''; ?>"
+                data-vote-action="down"
+                aria-label="Down vote this story"
+                title="Down vote">
+            <span aria-hidden="true">&darr;</span>
+            <span data-down-count><?php echo e($downVotes); ?></span>
+        </button>
+    </div>
+    <?php
+}
+
 $currentRole = strtolower(trim((string) ($_SESSION['user_role'] ?? '')));
+$currentUserId = (int) ($_SESSION['user_id'] ?? 0);
 $dashboardUrl = '';
 if ($currentRole === 'admin') {
     $dashboardUrl = 'admin_dashboard.php';
@@ -128,10 +169,11 @@ if (in_array($currentRole, ['admin', 'editor'], true)) {
     $statusCondition = "n.status IN ('approved', 'pending')";
 }
 
+$votesReady = ensure_news_votes_table($conn);
 $approvedNews = [];
 $categoryCounts = [];
 $query = "SELECT n.id, n.title, n.summary, n.category, n.media_path, n.media_type, n.author_name, n.created_at, n.status,
-                 u.username AS editor_username
+                 u.username AS editor_username" . ($votesReady ? vote_select_columns($currentUserId) : ", 0 AS up_votes, 0 AS down_votes, '' AS user_vote") . "
           FROM news_posts n
           LEFT JOIN users u ON n.created_by = u.id
           WHERE $statusCondition
@@ -293,6 +335,7 @@ $conn->close();
                             <span>By <?php echo e(author_name($heroItem)); ?></span>
                             <span><?php echo e(format_published_at($heroItem['created_at'])); ?></span>
                         </div>
+                        <?php render_vote_controls($heroItem); ?>
                         <?php if (!empty($heroItem['summary'])) : ?>
                             <p class="hero-summary"><?php echo e($heroItem['summary']); ?></p>
                         <?php endif; ?>
@@ -332,6 +375,7 @@ $conn->close();
                                     <p class="cat-summary"><?php echo e($item['summary']); ?></p>
                                 <?php endif; ?>
                                 <div class="ago"><?php echo e(format_published_at($item['created_at'])); ?> - <?php echo e(author_name($item)); ?></div>
+                                <?php render_vote_controls($item, true); ?>
                             </div>
                         </article>
                     <?php endforeach; ?>
@@ -363,6 +407,7 @@ $conn->close();
                                 <span class="cat-sm"><?php echo e($item['category']); ?> - <?php echo e(status_label($item['status'] ?? 'approved')); ?></span>
                                 <h3><?php echo e($item['title']); ?></h3>
                                 <div class="meta-sm">By <?php echo e(author_name($item)); ?> - <?php echo e(format_published_at($item['created_at'])); ?></div>
+                                <?php render_vote_controls($item, true); ?>
                             </div>
                         </article>
                     <?php endforeach; ?>
@@ -422,6 +467,7 @@ $conn->close();
                                 <div>
                                     <div class="trend-title"><?php echo e($item['title']); ?></div>
                                     <div class="trend-meta"><?php echo e($item['category']); ?> - <?php echo e(status_label($item['status'] ?? 'approved')); ?> - <?php echo e(format_published_at($item['created_at'])); ?></div>
+                                    <?php render_vote_controls($item, true); ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -581,6 +627,62 @@ if (searchForm && searchInput) {
         if (!insideSearch) {
             hideSearchModal();
         }
+    });
+}
+
+document.querySelectorAll('[data-vote-box]').forEach(function (box) {
+    box.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-vote-action]');
+        if (!button) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        var formData = new FormData();
+        formData.append('news_id', box.getAttribute('data-news-id'));
+        formData.append('action', button.getAttribute('data-vote-action'));
+
+        button.disabled = true;
+        fetch('vote_news_action.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(function (response) {
+            if (response.status === 401) {
+                window.location.href = 'login.php';
+                return null;
+            }
+            return response.json();
+        })
+        .then(function (data) {
+            if (!data) {
+                return;
+            }
+            if (!data.success) {
+                alert(data.message || 'Unable to update vote.');
+                return;
+            }
+            updateVoteBox(box, data);
+        })
+        .catch(function () {
+            alert('Unable to update vote right now.');
+        })
+        .finally(function () {
+            button.disabled = false;
+        });
+    });
+});
+
+function updateVoteBox(box, data) {
+    box.setAttribute('data-user-vote', data.user_vote || '');
+    box.querySelector('[data-up-count]').textContent = data.up_votes;
+    box.querySelector('[data-down-count]').textContent = data.down_votes;
+    box.querySelector('[data-score]').textContent = data.score;
+
+    box.querySelectorAll('[data-vote-action]').forEach(function (button) {
+        button.classList.toggle('is-active', button.getAttribute('data-vote-action') === data.user_vote);
     });
 }
 </script>

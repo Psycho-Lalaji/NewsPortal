@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/../db.php';
+require_once __DIR__ . '/../vote_helpers.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
@@ -32,13 +33,70 @@ function safe_trim_width($text, $width) {
     return strlen($text) > $width ? substr($text, 0, max(0, $width - 3)) . '...' : $text;
 }
 
+function app_base_path() {
+    static $basePath = null;
+
+    if ($basePath !== null) {
+        return $basePath;
+    }
+
+    $scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    $basePath = rtrim(dirname($scriptName), '/');
+
+    if ($basePath === '/' || $basePath === '.') {
+        $basePath = '';
+    }
+
+    return $basePath;
+}
+
+function app_url($path = '') {
+    $path = '/' . ltrim((string)$path, '/');
+    return app_base_path() . $path;
+}
+
+function render_detail_vote_controls(array $item) {
+    $id = (int)($item['id'] ?? 0);
+    if ($id <= 0) {
+        return;
+    }
+
+    $upVotes = (int)($item['up_votes'] ?? 0);
+    $downVotes = (int)($item['down_votes'] ?? 0);
+    $userVote = (string)($item['user_vote'] ?? '');
+    ?>
+    <div class="detail-vote-card" data-vote-box data-news-id="<?= e($id) ?>" data-user-vote="<?= e($userVote) ?>">
+        <button type="button"
+                class="detail-vote-btn detail-vote-btn--up <?= $userVote === 'up' ? 'is-active' : '' ?>"
+                data-vote-action="up"
+                title="Up vote"
+                aria-label="Up vote this story">
+            <span aria-hidden="true">&uarr;</span>
+            <span data-up-count><?= e($upVotes) ?></span>
+        </button>
+        <div class="detail-vote-score">
+            <span data-score><?= e(vote_score($item)) ?></span>
+            <small>score</small>
+        </div>
+        <button type="button"
+                class="detail-vote-btn detail-vote-btn--down <?= $userVote === 'down' ? 'is-active' : '' ?>"
+                data-vote-action="down"
+                title="Down vote"
+                aria-label="Down vote this story">
+            <span aria-hidden="true">&darr;</span>
+            <span data-down-count><?= e($downVotes) ?></span>
+        </button>
+    </div>
+    <?php
+}
+
 function detail_url($id = null) {
     $id = (int)$id;
     if ($id <= 0) {
-        return '/news-details.php';
+        return app_url('news-details.php');
     }
 
-    return '/news-details.php?id=' . $id;
+    return app_url('news-details.php?id=' . $id);
 }
 
 function normalize_news_row(array $row) {
@@ -48,24 +106,26 @@ function normalize_news_row(array $row) {
 }
 
 $currentRole = strtolower(trim((string)($_SESSION['user_role'] ?? '')));
+$currentUserId = (int)($_SESSION['user_id'] ?? 0);
 $dashboardUrl = '';
-if ($currentRole === 'admin') $dashboardUrl = '../admin_dashboard.php';
-elseif ($currentRole === 'editor') $dashboardUrl = '../dashboard.php';
+if ($currentRole === 'admin') $dashboardUrl = app_url('admin_dashboard.php');
+elseif ($currentRole === 'editor') $dashboardUrl = app_url('dashboard.php');
 
 $statusCondition = "n.status = 'approved'";
 if (in_array($currentRole, ['admin', 'editor'], true)) {
     $statusCondition = "n.status IN ('approved', 'pending')";
 }
 
+$votesReady = ensure_news_votes_table($conn);
 $articleId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if ($articleId === null || $articleId === false) {
     $conn->close();
-    header('Location: /home.php');
+    header('Location: ' . app_url('home.php'));
     exit;
 }
 
 $baseSelect = "SELECT n.id, n.title, n.summary, n.category, n.media_path, n.media_type, n.author_name, n.created_at, n.status,
-                      u.username AS editor_username
+                      u.username AS editor_username" . ($votesReady ? vote_select_columns($currentUserId) : ", 0 AS up_votes, 0 AS down_votes, '' AS user_vote") . "
                FROM news_posts n
                LEFT JOIN users u ON n.created_by = u.id";
 
@@ -157,8 +217,8 @@ $conn->close();
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= e($article['title']) ?> — EkataNews</title>
 <meta name="description" content="<?= e(safe_trim_width((string)($article['summary'] ?? ''), 160)) ?>">
-<link rel="stylesheet" href="/home.css">
-<link rel="stylesheet" href="/homepage/news-detail.css">
+<link rel="stylesheet" href="<?= e(app_url('home.css')) ?>">
+<link rel="stylesheet" href="<?= e(app_url('homepage/news-detail.css')) ?>">
 </head>
 <body>
 
@@ -184,7 +244,7 @@ $conn->close();
 
 <!-- HEADER -->
 <header>
-    <a href="../home.php" class="logo"><span class="logo-dot"></span>Ekata<span>News</span></a>
+    <a href="<?= e(app_url('home.php')) ?>" class="logo"><span class="logo-dot"></span>Ekata<span>News</span></a>
     <div class="header-actions">
         <?php if (isset($_SESSION['user_id'])): ?>
             <span class="welcome-user">Hi, <?= e($_SESSION['user_name'] ?? 'User') ?></span>
@@ -198,18 +258,18 @@ $conn->close();
             <?php if ($dashboardUrl !== ''): ?>
                 <a class="btn btn-solid" href="<?= e($dashboardUrl) ?>">Dashboard</a>
             <?php endif; ?>
-            <a class="btn btn-outline" href="../logout.php">Logout</a>
+            <a class="btn btn-outline" href="<?= e(app_url('logout.php')) ?>">Logout</a>
         <?php else: ?>
-            <a class="btn btn-outline" href="../login.php">Login</a>
-            <a class="btn btn-solid" href="../register.php">Register</a>
+            <a class="btn btn-outline" href="<?= e(app_url('login.php')) ?>">Login</a>
+            <a class="btn btn-solid" href="<?= e(app_url('register.php')) ?>">Register</a>
         <?php endif; ?>
     </div>
 </header>
 
 <!-- NAV -->
 <nav>
-    <a href="../home.php">All <span class="live-badge">LIVE</span></a>
-    <a href="../home.php?category=<?= urlencode($cat) ?>" class="active"><?= e($cat) ?></a>
+    <a href="<?= e(app_url('home.php')) ?>">All <span class="live-badge">LIVE</span></a>
+    <a href="<?= e(app_url('home.php?category=' . urlencode($cat))) ?>" class="active"><?= e($cat) ?></a>
 </nav>
 
 <!-- ARTICLE -->
@@ -217,9 +277,9 @@ $conn->close();
     <main>
 
         <nav class="breadcrumb" aria-label="breadcrumb">
-            <a href="../home.php">Home</a>
+            <a href="<?= e(app_url('home.php')) ?>">Home</a>
             <span class="sep">›</span>
-            <a href="../home.php?category=<?= urlencode($cat) ?>"><?= e($cat) ?></a>
+            <a href="<?= e(app_url('home.php?category=' . urlencode($cat))) ?>"><?= e($cat) ?></a>
             <span class="sep">›</span>
             <span style="color:var(--navy);text-transform:none;"><?= e(safe_trim_width($article['title'], 55)) ?></span>
         </nav>
@@ -263,6 +323,10 @@ $conn->close();
             </div>
         </div>
 
+        <?php if (!$articleNotFound): ?>
+            <?php render_detail_vote_controls($article); ?>
+        <?php endif; ?>
+
         <!-- Media -->
         <?php if (($article['media_type'] ?? '') === 'image' && !empty($article['media_path'])): ?>
             <div class="d-media-wrap">
@@ -298,9 +362,9 @@ $conn->close();
         <div class="d-tags-section">
             <div class="d-tags-label">Topics</div>
             <div class="d-tags">
-                <a class="d-tag" href="../home.php?category=<?= urlencode($cat) ?>"><?= e($cat) ?></a>
-                <a class="d-tag" href="../home.php?q=<?= urlencode(author_name($article)) ?>"><?= e(author_name($article)) ?></a>
-                <a class="d-tag" href="../home.php">EkataNews</a>
+                <a class="d-tag" href="<?= e(app_url('home.php?category=' . urlencode($cat))) ?>"><?= e($cat) ?></a>
+                <a class="d-tag" href="<?= e(app_url('home.php?q=' . urlencode(author_name($article)))) ?>"><?= e(author_name($article)) ?></a>
+                <a class="d-tag" href="<?= e(app_url('home.php')) ?>">EkataNews</a>
             </div>
         </div>
 
@@ -360,7 +424,7 @@ $conn->close();
             </div>
         </div>
 
-        <a class="btn btn-solid" href="../home.php" style="display:block;text-align:center;">← Back to Home</a>
+        <a class="btn btn-solid" href="<?= e(app_url('home.php')) ?>" style="display:block;text-align:center;">← Back to Home</a>
 
     </aside>
 </div>
@@ -396,7 +460,7 @@ function checkIfArticleSaved(newsId) {
     formData.append('action', 'check');
     formData.append('news_id', newsId);
 
-    fetch('../save_news_action.php', {
+    fetch(<?= json_encode(app_url('save_news_action.php')) ?>, {
         method: 'POST',
         body: formData
     })
@@ -420,7 +484,7 @@ function toggleSaveArticle(newsId) {
     formData.append('action', action);
     formData.append('news_id', newsId);
 
-    fetch('../save_news_action.php', {
+    fetch(<?= json_encode(app_url('save_news_action.php')) ?>, {
         method: 'POST',
         body: formData
     })
@@ -453,6 +517,61 @@ function updateSaveButtonState(isSaved) {
     }
 }
 <?php endif; ?>
+
+document.querySelectorAll('[data-vote-box]').forEach(function (box) {
+    box.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-vote-action]');
+        if (!button) {
+            return;
+        }
+
+        event.preventDefault();
+
+        var formData = new FormData();
+        formData.append('news_id', box.getAttribute('data-news-id'));
+        formData.append('action', button.getAttribute('data-vote-action'));
+
+        button.disabled = true;
+        fetch(<?= json_encode(app_url('vote_news_action.php')) ?>, {
+            method: 'POST',
+            body: formData
+        })
+        .then(function (response) {
+            if (response.status === 401) {
+                window.location.href = <?= json_encode(app_url('login.php')) ?>;
+                return null;
+            }
+            return response.json();
+        })
+        .then(function (data) {
+            if (!data) {
+                return;
+            }
+            if (!data.success) {
+                alert(data.message || 'Unable to update vote.');
+                return;
+            }
+            updateVoteBox(box, data);
+        })
+        .catch(function () {
+            alert('Unable to update vote right now.');
+        })
+        .finally(function () {
+            button.disabled = false;
+        });
+    });
+});
+
+function updateVoteBox(box, data) {
+    box.setAttribute('data-user-vote', data.user_vote || '');
+    box.querySelector('[data-up-count]').textContent = data.up_votes;
+    box.querySelector('[data-down-count]').textContent = data.down_votes;
+    box.querySelector('[data-score]').textContent = data.score;
+
+    box.querySelectorAll('[data-vote-action]').forEach(function (button) {
+        button.classList.toggle('is-active', button.getAttribute('data-vote-action') === data.user_vote);
+    });
+}
 </script>
 </body>
 </html>
