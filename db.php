@@ -3,9 +3,9 @@ session_start();
 
 $host = "127.0.0.1";
 $dbname = "news_portal";
-$port = 3307;
+$port = 3306;
 $user = "root";
-$pass = "";
+$pass = "0809";
 
 $conn = new mysqli($host, $user, $pass, $dbname, $port);
 if ($conn->connect_error) {

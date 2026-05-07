@@ -128,6 +128,16 @@ if (in_array($currentRole, ['admin', 'editor'], true)) {
     $statusCondition = "n.status IN ('approved', 'pending')";
 }
 
+// Fetch categories from database
+$categoriesList = [];
+$catQuery = $conn->query("SELECT name FROM categories ORDER BY name ASC");
+if ($catQuery) {
+    while ($row = $catQuery->fetch_assoc()) {
+        $categoriesList[] = $row['name'];
+    }
+    $catQuery->free();
+}
+
 $approvedNews = [];
 $categoryCounts = [];
 $query = "SELECT n.id, n.title, n.summary, n.category, n.media_path, n.media_type, n.author_name, n.created_at, n.status,
@@ -160,8 +170,7 @@ if ($result instanceof mysqli_result) {
 $searchQuery = trim((string) ($_GET['q'] ?? ''));
 $categoryFilter = trim((string) ($_GET['category'] ?? ''));
 
-$categories = array_keys($categoryCounts);
-sort($categories, SORT_NATURAL | SORT_FLAG_CASE);
+$categories = $categoriesList;
 
 $filteredNews = array_values(array_filter($approvedNews, function ($item) use ($categoryFilter, $searchQuery) {
     return news_matches_filters($item, $categoryFilter, $searchQuery);

@@ -50,6 +50,18 @@ if (isset($_GET['edit_id'])) {
 }
 
 // =======================================
+// FETCH CATEGORIES
+// =======================================
+$categories = [];
+$catResult = $conn->query("SELECT id, name FROM categories ORDER BY name ASC");
+if ($catResult) {
+    while ($row = $catResult->fetch_assoc()) {
+        $categories[] = $row;
+    }
+    $catResult->free();
+}
+
+// =======================================
 // HANDLE UPDATE
 // =======================================
 $errors = [];
@@ -178,13 +190,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <select name="category" required>
     <option value="">Select Category</option>
-    <?php
-    $cats = ['Politics','Sports','Technology','Entertainment'];
-    foreach ($cats as $cat) {
-        $sel = ($post['category']==$cat) ? 'selected' : '';
-        echo "<option value=\"$cat\" $sel>$cat</option>";
-    }
-    ?>
+    <?php foreach ($categories as $cat): ?>
+        <option value="<?php echo htmlspecialchars($cat['name']); ?>" <?php echo ($post['category'] == $cat['name']) ? 'selected' : ''; ?>>
+            <?php echo htmlspecialchars($cat['name']); ?>
+        </option>
+    <?php endforeach; ?>
 </select>
 
 <label>Replace Media (optional)</label>
