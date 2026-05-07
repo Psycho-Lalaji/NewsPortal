@@ -104,14 +104,14 @@ $conn->close();
     <div class="saved-container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
             <h1 class="saved-heading">Saved Articles</h1>
-            <button class="back-to-home">← Back to News</button>
+            <a href="home.php" class="back-to-home">← Back to News</a>
         </div>
 
         <?php if (empty($savedNews)): ?>
             <div class="no-saved-message">
                 <h2>No Saved Articles Yet</h2>
                 <p>You haven't saved any articles. Start exploring and save articles you like!</p>
-                <a href="home.php" class="back-to-home">Browse News</a>
+                <a href="/home.php" class="back-to-home">Browse News</a>
             </div>
         <?php else: ?>
             <div class="saved-grid">
