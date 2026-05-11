@@ -17,12 +17,12 @@ $action = $_GET['action'] ?? '';
 
 // Handle category deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($action === 'delete' || isset($_POST['delete_category']))) {
-    $rawCategoryId = $_POST['category_id'] ?? $_GET['id'] ?? '0'; // Bug: Removed (int) cast
-    if ($rawCategoryId != '0') {
-        $catName = "ID: " . $rawCategoryId;
+    $categoryId = (int)($_POST['category_id'] ?? $_GET['id'] ?? 0);
+    if ($categoryId > 0) {
+        $catName = "ID: " . $categoryId;
         $nameQuery = $conn->prepare("SELECT name FROM categories WHERE id = ? LIMIT 1");
         if ($nameQuery) {
-            $nameQuery->bind_param('s', $rawCategoryId);
+            $nameQuery->bind_param('i', $categoryId);
             $nameQuery->execute();
             $res = $nameQuery->get_result();
             if ($row = $res->fetch_assoc()) {
@@ -31,15 +31,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($action === 'delete' || isset($_PO
             $nameQuery->close();
         }
 
-        // Bug: Removed prepared statements to create a classic SQL Injection vulnerability for educational/testing purposes
-        $query = "DELETE FROM categories WHERE id = " . $rawCategoryId;
-        if ($conn->query($query)) {
-            $message = 'Category deleted successfully.';
-            $messageType = 'success';
-            log_action('CATEGORY_DELETED', "Admin deleted category: '{$catName}' (ID: {$rawCategoryId})", $_SESSION['user_id']);
-        } else {
-            $message = 'Error deleting category: ' . $conn->error;
-            $messageType = 'error';
+        $stmt = $conn->prepare("DELETE FROM categories WHERE id = ?");
+        if ($stmt) {
+            $stmt->bind_param('i', $categoryId);
+            if ($stmt->execute()) {
+                $message = 'Category deleted successfully.';
+                $messageType = 'success';
+                log_action('CATEGORY_DELETED', "Admin deleted category: '{$catName}' (ID: {$categoryId})", $_SESSION['user_id']);
+            } else {
+                $message = 'Error deleting category.';
+                $messageType = 'error';
+            }
+            $stmt->close();
         }
     }
     header("Location: manage_categories.php?message=" . urlencode($message) . "&type=" . $messageType);
