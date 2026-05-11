@@ -35,10 +35,10 @@ function safe_trim_width($text, $width) {
 function detail_url($id = null) {
     $id = (int)$id;
     if ($id <= 0) {
-        return '/news-details.php';
+        return 'news-details.php';
     }
 
-    return '/news-details.php?id=' . $id;
+    return 'news-details.php?id=' . $id;
 }
 
 function normalize_news_row(array $row) {
@@ -49,8 +49,8 @@ function normalize_news_row(array $row) {
 
 $currentRole = strtolower(trim((string)($_SESSION['user_role'] ?? '')));
 $dashboardUrl = '';
-if ($currentRole === 'admin') $dashboardUrl = '../admin_dashboard.php';
-elseif ($currentRole === 'editor') $dashboardUrl = '../dashboard.php';
+if ($currentRole === 'admin') $dashboardUrl = 'admin_dashboard.php';
+elseif ($currentRole === 'editor') $dashboardUrl = 'dashboard.php';
 
 $statusCondition = "n.status = 'approved'";
 if (in_array($currentRole, ['admin', 'editor'], true)) {
@@ -60,7 +60,7 @@ if (in_array($currentRole, ['admin', 'editor'], true)) {
 $articleId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if ($articleId === null || $articleId === false) {
     $conn->close();
-    header('Location: /home.php');
+    header('Location: home.php');
     exit;
 }
 
@@ -157,8 +157,8 @@ $conn->close();
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= e($article['title']) ?> — EkataNews</title>
 <meta name="description" content="<?= e(safe_trim_width((string)($article['summary'] ?? ''), 160)) ?>">
-<link rel="stylesheet" href="/home.css">
-<link rel="stylesheet" href="/homepage/news-detail.css">
+<link rel="stylesheet" href="home.css">
+<link rel="stylesheet" href="homepage/news-detail.css">
 </head>
 <body>
 
@@ -184,11 +184,11 @@ $conn->close();
 
 <!-- HEADER -->
 <header>
-    <a href="../home.php" class="logo"><span class="logo-dot"></span>Ekata<span>News</span></a>
+    <a href="home.php" class="logo"><span class="logo-dot"></span>Ekata<span>News</span></a>
     <div class="header-actions">
         <?php if (isset($_SESSION['user_id'])): ?>
             <span class="welcome-user">Hi, <?= e($_SESSION['user_name'] ?? 'User') ?></span>
-            <a class="btn btn-outline" title="View your saved articles">
+            <a class="btn btn-outline" href="saved_news.php" title="View your saved articles">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
                     <polyline points="17 21 17 13 7 13 7 21"/>
@@ -198,18 +198,18 @@ $conn->close();
             <?php if ($dashboardUrl !== ''): ?>
                 <a class="btn btn-solid" href="<?= e($dashboardUrl) ?>">Dashboard</a>
             <?php endif; ?>
-            <a class="btn btn-outline" href="../logout.php">Logout</a>
+            <a class="btn btn-outline" href="logout.php">Logout</a>
         <?php else: ?>
-            <a class="btn btn-outline" href="../login.php">Login</a>
-            <a class="btn btn-solid" href="../register.php">Register</a>
+            <a class="btn btn-outline" href="login.php">Login</a>
+            <a class="btn btn-solid" href="register.php">Register</a>
         <?php endif; ?>
     </div>
 </header>
 
 <!-- NAV -->
 <nav>
-    <a href="../home.php">All <span class="live-badge">LIVE</span></a>
-    <a href="../home.php?category=<?= urlencode($cat) ?>" class="active"><?= e($cat) ?></a>
+    <a href="home.php">All <span class="live-badge">LIVE</span></a>
+    <a href="home.php?category=<?= urlencode($cat) ?>" class="active"><?= e($cat) ?></a>
 </nav>
 
 <!-- ARTICLE -->
@@ -217,9 +217,9 @@ $conn->close();
     <main>
 
         <nav class="breadcrumb" aria-label="breadcrumb">
-            <a href="../home.php">Home</a>
+            <a href="home.php">Home</a>
             <span class="sep">›</span>
-            <a href="../home.php?category=<?= urlencode($cat) ?>"><?= e($cat) ?></a>
+            <a href="home.php?category=<?= urlencode($cat) ?>"><?= e($cat) ?></a>
             <span class="sep">›</span>
             <span style="color:var(--navy);text-transform:none;"><?= e(safe_trim_width($article['title'], 55)) ?></span>
         </nav>
@@ -298,9 +298,9 @@ $conn->close();
         <div class="d-tags-section">
             <div class="d-tags-label">Topics</div>
             <div class="d-tags">
-                <a class="d-tag" href="../home.php?category=<?= urlencode($cat) ?>"><?= e($cat) ?></a>
-                <a class="d-tag" href="../home.php?q=<?= urlencode(author_name($article)) ?>"><?= e(author_name($article)) ?></a>
-                <a class="d-tag" href="../home.php">EkataNews</a>
+                <a class="d-tag" href="home.php?category=<?= urlencode($cat) ?>"><?= e($cat) ?></a>
+                <a class="d-tag" href="home.php?q=<?= urlencode(author_name($article)) ?>"><?= e(author_name($article)) ?></a>
+                <a class="d-tag" href="home.php">EkataNews</a>
             </div>
         </div>
 
@@ -360,7 +360,7 @@ $conn->close();
             </div>
         </div>
 
-        <a class="btn btn-solid" href="../home.php" style="display:block;text-align:center;">← Back to Home</a>
+        <a class="btn btn-solid" href="home.php" style="display:block;text-align:center;">← Back to Home</a>
 
     </aside>
 </div>
@@ -396,7 +396,7 @@ function checkIfArticleSaved(newsId) {
     formData.append('action', 'check');
     formData.append('news_id', newsId);
 
-    fetch('../save_news_action.php', {
+    fetch('save_news_action.php', {
         method: 'POST',
         body: formData
     })
@@ -420,7 +420,7 @@ function toggleSaveArticle(newsId) {
     formData.append('action', action);
     formData.append('news_id', newsId);
 
-    fetch('../save_news_action.php', {
+    fetch('save_news_action.php', {
         method: 'POST',
         body: formData
     })

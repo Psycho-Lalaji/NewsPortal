@@ -141,7 +141,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $userId
         );
 
-        if ($stmt->execute()) $success = true;
+        if ($stmt->execute()) {
+            $success = true;
+            log_action('POST_UPDATED', "Editor updated article: '{$title}' (ID: {$postId}, status reset to pending)", $userId);
+        }
         else $errors[] = "Update failed";
     }
 }

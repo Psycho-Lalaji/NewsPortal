@@ -114,6 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
 
             if ($stmt->execute()) {
+                $newPostId = (int)$stmt->insert_id;
+                log_action('POST_CREATED', "Editor submitted new article for approval: '{$title}' (Category: {$category})", $createdBy);
                 $stmt->close();
                 $conn->close();
                 header("Location: news-form.php?success=1");

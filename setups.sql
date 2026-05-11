@@ -79,4 +79,61 @@ VALUES (
 ON DUPLICATE KEY UPDATE role = 'admin';
 
 -- Temporary admin password: Admin@12345
--- Change it right after first login.
+
+-- Assuming categories IDs: 1=Politics, 2=Sports, 3=Technology, 4=Entertainment
+-- Adjust IDs if needed after checking your DB
+
+-- Run after your schema + categories + admin user
+INSERT INTO news_posts (
+  title, summary, category_id, category, media_path, media_type,
+  author_name, created_by, status, created_at
+) VALUES
+
+-- 1. Politics
+('Trump Calls Iran’s Response to Peace Proposal ‘Totally Unacceptable’',
+ 'President Trump rejected Iran’s latest response to U.S. ceasefire proposals amid ongoing tensions in the Strait of Hormuz.',
+ 1, 'Politics',
+ 'https://media.gettyimages.com/id/2150000000/photo/donald-trump-speaks-at-a-rally.jpg',  -- Replace with actual recent Trump image if needed
+ 'image', 'AP/Reuters', NULL, 'approved', NOW()),
+
+-- 2. Politics
+('Virginia Supreme Court Tosses Voter-Approved Redistricting Map in Major Blow to Democrats',
+ 'The court ruling overturns a map that could have shifted multiple House seats ahead of midterms.',
+ 1, 'Politics',
+ 'https://media.gettyimages.com/id/2180000000/photo/us-supreme-court-building.jpg',
+ 'image', 'NYT Staff', NULL, 'approved', NOW()),
+
+-- 3. Sports - Thunder vs Lakers
+('Thunder Dominate Lakers 131-108, Take 3-0 Series Lead in Western Semifinals',
+ 'Oklahoma City blew out Los Angeles in Game 3 behind Shai Gilgeous-Alexander and Ajay Mitchell.',
+ 2, 'Sports',
+ 'https://picsum.photos/id/1015/800/450',   -- Reliable placeholder (or use real NBA Getty)
+ 'image', 'NBA/USA Today', NULL, 'approved', NOW()),
+
+-- 4. Sports - Arsenal
+('Arsenal Advances to Champions League Final After Beating Atlético Madrid',
+ 'The Gunners secured a historic spot in the final with a strong performance.',
+ 2, 'Sports',
+ 'https://picsum.photos/id/201/800/450',
+ 'image', 'Arsenal/CNN Sport', NULL, 'approved', NOW()),
+
+-- 5. Technology - Nintendo
+('Nintendo Shares Slump as Price Hikes and Games Shortfall Spook Investors',
+ 'Despite strong Switch 2 performance, Nintendo warned of profit drops.',
+ 3, 'Technology',
+ 'https://www.nintendolife.com/images/news/switch2_official.jpg',
+ 'image', 'Reuters', NULL, 'approved', NOW()),
+
+-- 6. Technology - SpaceX
+('Elon Musk’s SpaceX Plans $55 Billion Investment in AI Chip Factory',
+ 'The company aims to boost AI capabilities with the new Terafab semiconductor facility.',
+ 3, 'Technology',
+ 'https://picsum.photos/id/1074/800/450',   -- Tech/factory style
+ 'image', 'NYT Tech', NULL, 'approved', NOW()),
+
+-- 7. Entertainment
+('Taylor Swift and Travis Kelce Enjoy Romantic Date Night in London',
+ 'The couple was spotted at dinner and events during their UK getaway.',
+ 4, 'Entertainment',
+ 'https://picsum.photos/id/1005/800/450',   -- Celebrity style
+ 'image', 'Page Six/TMZ', NULL, 'approved', NOW());

@@ -18,20 +18,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $postId = (int) ($_POST['post_id'] ?? 0);
     $action = $_POST['action'] ?? '';
 
-    if ($postId > 0 && in_array($action, ['approved', 'rejected'], true)) {
-        $stmt = $conn->prepare(
-            "UPDATE news_posts SET status = ? WHERE id = ? AND status = 'pending'"
-        );
+    if ($postId > 0 && in_array($action, ['approved', 'rejected', 'delete'], true)) {
+        // Query the post title first for a detailed audit log entry
+        $postTitle = "ID: " . $postId;
+        $titleQuery = $conn->prepare("SELECT title FROM news_posts WHERE id = ? LIMIT 1");
+        if ($titleQuery) {
+            $titleQuery->bind_param('i', $postId);
+            $titleQuery->execute();
+            $res = $titleQuery->get_result();
+            if ($row = $res->fetch_assoc()) {
+                $postTitle = $row['title'];
+            }
+            $titleQuery->close();
+        }
 
-        if ($stmt) {
-            $stmt->bind_param('si', $action, $postId);
-            $stmt->execute();
-            $updatedRows = $stmt->affected_rows;
-            $stmt->close();
+        if ($action === 'delete') {
+            $stmt = $conn->prepare("DELETE FROM news_posts WHERE id = ?");
+            if ($stmt) {
+                $stmt->bind_param('i', $postId);
+                $stmt->execute();
+                $deletedRows = $stmt->affected_rows;
+                $stmt->close();
 
-            if ($updatedRows > 0) {
-                header("Location: admin_review.php?status=" . $action);
-                exit;
+                if ($deletedRows > 0) {
+                    log_action('POST_DELETED', "Admin deleted news article: '{$postTitle}' (ID: {$postId})", $_SESSION['user_id']);
+                    header("Location: admin_review.php?status=deleted");
+                    exit;
+                }
+            }
+        } else {
+            $stmt = $conn->prepare(
+                "UPDATE news_posts SET status = ? WHERE id = ? AND status = 'pending'"
+            );
+
+            if ($stmt) {
+                $stmt->bind_param('si', $action, $postId);
+                $stmt->execute();
+                $updatedRows = $stmt->affected_rows;
+                $stmt->close();
+
+                if ($updatedRows > 0) {
+                    $logAction = ($action === 'approved') ? 'POST_APPROVED' : 'POST_REJECTED';
+                    $logDetails = "Admin " . $action . " article: '{$postTitle}' (ID: {$postId})";
+                    log_action($logAction, $logDetails, $_SESSION['user_id']);
+
+                    header("Location: admin_review.php?status=" . $action);
+                    exit;
+                }
             }
         }
 
@@ -50,6 +83,9 @@ if ($statusParam === 'approved') {
 } elseif ($statusParam === 'rejected') {
     $statusMessage = 'Submission rejected.';
     $statusClass = 'status-warning';
+} elseif ($statusParam === 'deleted') {
+    $statusMessage = 'News article deleted successfully.';
+    $statusClass = 'status-success';
 } elseif ($statusParam === 'error') {
     $statusMessage = 'Unable to update submission status.';
     $statusClass = 'status-error';
@@ -200,6 +236,7 @@ $conn->close();
                                 <th>Author</th>
                                 <th>Status</th>
                                 <th>Submitted</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -226,6 +263,12 @@ $conn->close();
                                         </span>
                                     </td>
                                     <td><?php echo htmlspecialchars($item['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td>
+                                        <form method="POST" onsubmit="return confirm('⚠️ WARNING: Are you sure you want to permanently delete this news post?');" style="display:inline;">
+                                            <input type="hidden" name="post_id" value="<?php echo (int)$item['id']; ?>">
+                                            <button type="submit" name="action" value="delete" class="btn-reject" style="border:none; border-radius:8px; padding:6px 12px; color:#fff; font-weight:600; font-size:0.8rem; cursor:pointer; background:#dc2626; transition:background 0.2s;">Delete</button>
+                                        </form>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

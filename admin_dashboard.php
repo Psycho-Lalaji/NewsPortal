@@ -48,9 +48,9 @@ if (($_SESSION['user_role'] ?? '') !== 'admin') {
                 <p>Review and approve editor-submitted news.</p>
             </div></a>
 
-            <a href="#"><div class="card">
-                <h3>System Settings</h3>
-                <p>Update portal-level settings and configurations.</p>
+            <a href="admin_logs.php"><div class="card">
+                <h3>System Logs</h3>
+                <p>Monitor security audits, login logs, and categories.</p>
             </div></a>
         </div>
     </main>

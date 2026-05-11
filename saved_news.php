@@ -111,7 +111,7 @@ $conn->close();
             <div class="no-saved-message">
                 <h2>No Saved Articles Yet</h2>
                 <p>You haven't saved any articles. Start exploring and save articles you like!</p>
-                <a href="/home.php" class="back-to-home">Browse News</a>
+                <a href="home.php" class="back-to-home">Browse News</a>
             </div>
         <?php else: ?>
             <div class="saved-grid">
