@@ -1,7 +1,8 @@
 <?php
 require 'db.php';
-session_start();
-function e($value)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}function e($value)
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
