@@ -73,6 +73,7 @@ if ($page === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
 
     if (!$user || !password_verify($password, $user['password'])) {
+        log_action('LOGIN_FAILED', "Failed login attempt for username/email: '$identifier'");
         header('Location: login.php?error=' . rawurlencode('Invalid username/email or password.'));
         exit;
     }
@@ -81,6 +82,8 @@ if ($page === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['user_id'] = (int) $user['id'];
     $_SESSION['user_name'] = $user['username'];
     $_SESSION['user_role'] = normalize_role($user['role'] ?? '');
+
+    log_action('LOGIN_SUCCESS', "User '{$user['username']}' successfully logged in with role: '{$_SESSION['user_role']}'", $user['id']);
 
     redirect_by_role($_SESSION['user_role']);
 }
@@ -100,7 +103,7 @@ if ($page === 'forgot' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $stmt = $conn->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
+    $stmt = $conn->prepare('SELECT id, username FROM users WHERE email = ? LIMIT 1');
     $stmt->bind_param('s', $email);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -108,6 +111,7 @@ if ($page === 'forgot' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
 
     if (!$user) {
+        log_action('PASSWORD_RESET_ATTEMPT_UNKNOWN_EMAIL', "Password reset requested for unregistered email: '$email'");
         header('Location: login.php?page=forgot&error=' . rawurlencode('No account found with that email.'));
         exit;
     }
@@ -121,6 +125,8 @@ if ($page === 'forgot' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['reset_otp_expires'] = $expiresAt;
     $_SESSION['reset_user_id'] = $user['id'];
     $_SESSION['reset_email'] = $email;
+
+    log_action('PASSWORD_RESET_REQUESTED', "Password reset OTP generated for user '{$user['username']}' ({$email})", $user['id']);
 
     // Show OTP on screen (localhost only)
     $generatedOtp = $otp;
@@ -143,12 +149,14 @@ if ($page === 'otp' && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['e
     }
 
     if ($enteredOtp !== $_SESSION['reset_otp']) {
+        log_action('PASSWORD_RESET_OTP_FAILED', "Incorrect OTP code entered during verification", $_SESSION['reset_user_id']);
         header('Location: login.php?page=otp&error=' . rawurlencode('Invalid OTP. Please try again.'));
         exit;
     }
 
     // OTP correct — allow reset
     $_SESSION['otp_verified'] = true;
+    log_action('PASSWORD_RESET_OTP_VERIFIED', "Successfully verified password reset OTP code", $_SESSION['reset_user_id']);
     header('Location: login.php?page=reset');
     exit;
 }
@@ -181,6 +189,8 @@ if ($page === 'reset' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $updateStmt->bind_param('si', $hashedPassword, $userId);
     $updateStmt->execute();
     $updateStmt->close();
+
+    log_action('PASSWORD_RESET_COMPLETED', "Successfully reset password using OTP verification", $userId);
 
     // Clear all reset session data
     unset($_SESSION['reset_otp'], $_SESSION['reset_otp_expires'], $_SESSION['reset_user_id'], $_SESSION['reset_email'], $_SESSION['otp_verified']);

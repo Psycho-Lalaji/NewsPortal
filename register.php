@@ -40,6 +40,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $stmt->bind_param("sss", $username, $email, $hashed);
 
                     if ($stmt->execute()) {
+                        $newUserId = (int)$stmt->insert_id;
+                        log_action('USER_REGISTERED', "New user account created successfully with username: '{$username}' and email: '{$email}'", $newUserId);
                         $stmt->close();
                         $checkStmt->close();
                         $conn->close();

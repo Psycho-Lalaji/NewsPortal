@@ -67,6 +67,8 @@ $insertStmt = $conn->prepare("INSERT INTO users (username, email, password, role
 $insertStmt->bind_param("ssss", $username, $email, $hashedPassword, $role);
 
 if ($insertStmt->execute()) {
+    $editorUserId = (int)$insertStmt->insert_id;
+    log_action('EDITOR_CREATED', "Admin created new Editor account: '{$username}' (Email: {$email})", $_SESSION['user_id']);
     $insertStmt->close();
     $conn->close();
     header("Location: manage_users.php?create_status=success&message=" . rawurlencode('Editor account created successfully.'));

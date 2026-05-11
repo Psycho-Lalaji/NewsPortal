@@ -38,14 +38,19 @@ if (($_SESSION['user_role'] ?? '') !== 'admin') {
                 <p>Create, update, and deactivate portal users.</p>
             </div></a>
 
+            <a href="manage_categories.php"><div class="card">
+                <h3>Manage Categories</h3>
+                <p>Create, edit, and delete news categories.</p>
+            </div></a>
+
             <a href="admin_review.php"><div class="card">
                 <h3>News Review</h3>
                 <p>Review and approve editor-submitted news.</p>
             </div></a>
 
-            <a href="#"><div class="card">
-                <h3>System Settings</h3>
-                <p>Update portal-level settings and configurations.</p>
+            <a href="admin_logs.php"><div class="card">
+                <h3>System Logs</h3>
+                <p>Monitor security audits, login logs, and categories.</p>
             </div></a>
         </div>
     </main>

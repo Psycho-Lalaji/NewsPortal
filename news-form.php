@@ -19,6 +19,16 @@ $category = '';
 $authorName = '';
 $success = isset($_GET['success']) && $_GET['success'] === '1';
 
+// Fetch categories from database
+$categories = [];
+$catResult = $conn->query("SELECT id, name FROM categories ORDER BY name ASC");
+if ($catResult) {
+    while ($row = $catResult->fetch_assoc()) {
+        $categories[] = $row;
+    }
+    $catResult->free();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim($_POST['title'] ?? '');
     $summary = trim($_POST['summary'] ?? '');
@@ -104,6 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
 
             if ($stmt->execute()) {
+                $newPostId = (int)$stmt->insert_id;
+                log_action('POST_CREATED', "Editor submitted new article for approval: '{$title}' (Category: {$category})", $createdBy);
                 $stmt->close();
                 $conn->close();
                 header("Location: news-form.php?success=1");
@@ -163,10 +175,11 @@ if ($success) {
 
             <select name="category" required>
                 <option value="" <?php echo $category === '' ? 'selected' : ''; ?>>Select Category</option>
-                <option value="Politics" <?php echo $category === 'Politics' ? 'selected' : ''; ?>>Politics</option>
-                <option value="Sports" <?php echo $category === 'Sports' ? 'selected' : ''; ?>>Sports</option>
-                <option value="Technology" <?php echo $category === 'Technology' ? 'selected' : ''; ?>>Technology</option>
-                <option value="Entertainment" <?php echo $category === 'Entertainment' ? 'selected' : ''; ?>>Entertainment</option>
+                <?php foreach ($categories as $cat): ?>
+                    <option value="<?php echo htmlspecialchars($cat['name']); ?>" <?php echo $category === $cat['name'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($cat['name']); ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
 
             <label for="media">Upload Image / Video:</label>
