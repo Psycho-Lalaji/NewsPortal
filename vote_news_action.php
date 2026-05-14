@@ -9,6 +9,12 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+if (!csrf_is_valid()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Invalid request. Please refresh and try again.']);
+    exit;
+}
+
 $userId = (int) $_SESSION['user_id'];
 $newsId = filter_input(INPUT_POST, 'news_id', FILTER_VALIDATE_INT);
 $action = strtolower(trim((string) ($_POST['action'] ?? '')));

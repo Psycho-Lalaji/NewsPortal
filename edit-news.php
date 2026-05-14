@@ -68,6 +68,7 @@ $errors = [];
 $success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
 
     $postId = (int) $_POST['post_id'];
     $title = trim($_POST['title'] ?? '');
@@ -186,6 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php if ($errors): ?><p class="status-msg error"><?php echo htmlspecialchars(implode(', ', $errors)); ?></p><?php endif; ?>
 
 <form method="POST" enctype="multipart/form-data">
+<?php echo csrf_field(); ?>
 <input type="hidden" name="post_id" value="<?php echo $post['id']; ?>">
 
 <input type="text" name="title" value="<?php echo htmlspecialchars($post['title']); ?>" required>

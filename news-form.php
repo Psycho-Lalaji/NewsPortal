@@ -30,6 +30,8 @@ if ($catResult) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
+
     $title = trim($_POST['title'] ?? '');
     $summary = trim($_POST['summary'] ?? '');
     $category = trim($_POST['category'] ?? '');
@@ -169,6 +171,7 @@ if ($success) {
         <?php endif; ?>
 
         <form method="POST" enctype="multipart/form-data" autocomplete="on">
+            <?php echo csrf_field(); ?>
             <input type="text" name="title" placeholder="News Title" value="<?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?>" required>
 
             <textarea name="summary" placeholder="Short description / summary"><?php echo htmlspecialchars($summary ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>

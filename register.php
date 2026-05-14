@@ -5,6 +5,7 @@ $error = "";
 $success = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    require_csrf();
 
     $username = trim($_POST['username'] ?? '');
     $email = trim($_POST['email'] ?? '');
@@ -94,6 +95,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php endif; ?>
 
         <form method="POST">
+            <?php echo csrf_field(); ?>
 
             <div class="form-group">
                 <input type="text" name="username" required placeholder=" ">

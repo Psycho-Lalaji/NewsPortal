@@ -14,10 +14,6 @@ if (($_SESSION['user_role'] ?? '') !== 'admin') {
 $createStatus = $_GET['create_status'] ?? '';
 $createMessage = trim($_GET['message'] ?? '');
 
-if (!isset($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
 $users = [];
 $usersError = '';
 
@@ -67,7 +63,7 @@ $conn->close();
             <?php endif; ?>
 
             <form class="admin-form" method="POST" action="create_editor.php" autocomplete="off">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                <?php echo csrf_field(); ?>
                 <input type="text" name="username" placeholder="Editor username" required>
                 <input type="email" name="email" placeholder="Editor email" required>
                 <input type="password" name="password" placeholder="Temporary password" minlength="8" required>

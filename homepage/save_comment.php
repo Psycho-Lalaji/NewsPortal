@@ -12,6 +12,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+if (!csrf_is_valid()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Invalid request. Please refresh and try again.']);
+    exit;
+}
+
 $news_id = filter_input(INPUT_POST, 'news_id', FILTER_VALIDATE_INT);
 $user_name = trim($_POST['user_name'] ?? '');
 $user_email = trim($_POST['user_email'] ?? '');

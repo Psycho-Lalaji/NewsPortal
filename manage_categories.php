@@ -17,6 +17,8 @@ $action = $_GET['action'] ?? '';
 
 // Handle category deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($action === 'delete' || isset($_POST['delete_category']))) {
+    require_csrf('manage_categories.php?message=Invalid+request.+Please+refresh+and+try+again.&type=error');
+
     $categoryId = (int)($_POST['category_id'] ?? $_GET['id'] ?? 0);
     if ($categoryId > 0) {
         $catName = "ID: " . $categoryId;
@@ -51,6 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($action === 'delete' || isset($_PO
 
 // Handle category creation or update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_category'])) {
+    require_csrf('manage_categories.php?message=Invalid+request.+Please+refresh+and+try+again.&type=error');
+
     $categoryId = (int)($_POST['category_id'] ?? 0);
     $name = trim($_POST['name'] ?? '');
     $description = trim($_POST['description'] ?? '');
@@ -386,6 +390,7 @@ $conn->close();
         <div class="form-section">
             <h3><?php echo $editCategory ? 'Edit Category' : 'Create New Category'; ?></h3>
             <form method="POST" action="manage_categories.php">
+                <?php echo csrf_field(); ?>
                 <?php if ($editCategory): ?>
                     <input type="hidden" name="category_id" value="<?php echo $editCategory['id']; ?>">
                 <?php endif; ?>
@@ -442,6 +447,7 @@ $conn->close();
                                     <div class="table-actions">
                                         <a href="manage_categories.php?edit_id=<?php echo $cat['id']; ?>" class="btn btn-sm btn-edit">Edit</a>
                                         <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this category?');">
+                                            <?php echo csrf_field(); ?>
                                             <input type="hidden" name="category_id" value="<?php echo $cat['id']; ?>">
                                             <button type="submit" name="delete_category" class="btn btn-sm btn-delete">Delete</button>
                                         </form>

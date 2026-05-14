@@ -16,11 +16,7 @@ if (($_SESSION['user_role'] ?? '') !== 'admin') {
     exit;
 }
 
-$csrfToken = $_POST['csrf_token'] ?? '';
-if ($csrfToken === '' || !hash_equals($_SESSION['csrf_token'] ?? '', $csrfToken)) {
-    header("Location: manage_users.php?create_status=error&message=" . rawurlencode('Invalid request. Please refresh and try again.'));
-    exit;
-}
+require_csrf("manage_users.php?create_status=error&message=" . rawurlencode('Invalid request. Please refresh and try again.'));
 
 $username = trim($_POST['username'] ?? '');
 $email = trim($_POST['email'] ?? '');

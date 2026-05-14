@@ -15,6 +15,8 @@ if (($_SESSION['user_role'] ?? '') !== 'admin') {
 // Handle clear logs action
 $clearedMessage = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_logs'])) {
+    require_csrf('admin_logs.php?status=invalid_request');
+
     // Log the purge action itself before clearing
     log_action('LOGS_CLEARED', 'Administrator performed a manual clear of audit logs.', $_SESSION['user_id']);
     
@@ -30,6 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_logs'])) {
 
 if (isset($_GET['status']) && $_GET['status'] === 'cleared') {
     $clearedMessage = 'All system audit logs have been successfully cleared (clearance action was recorded).';
+} elseif (isset($_GET['status']) && $_GET['status'] === 'invalid_request') {
+    $clearedMessage = 'Invalid request. Please refresh and try again.';
 }
 
 // ── PAGINATION & FILTERS ──────────────────────────────────────────────────
@@ -557,6 +561,7 @@ function get_action_badge_class($action) {
                 <a href="admin_dashboard.php" class="btn-logs btn-logs-secondary back-btn">← Admin Dashboard</a>
                 
                 <form method="POST" onsubmit="return confirm('⚠️ CRITICAL WARNING: Are you sure you want to delete all audit logs? This action is irreversible, though the clearing action itself will be logged.');" style="display: inline;">
+                    <?php echo csrf_field(); ?>
                     <button type="submit" name="clear_logs" class="btn-logs btn-logs-danger">Clear All Logs</button>
                 </form>
             </div>

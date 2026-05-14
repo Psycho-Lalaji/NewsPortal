@@ -2,26 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Editor Login</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="auth.css">
-</head>
+    <meta http-equiv="refresh" content="0; url=login.php">
+    <title>News Portal</title>
 </head>
 <body>
-
-<div class="login-container">
-    <h2>Editor Login</h2>
-
-    <form method="POST" action="login.php" autocomplete="on">
-        <input id="username" type="text" name="username" placeholder="Enter Username or Email" autocomplete="username" required>
-        <input id="password" type="password" name="password" placeholder="Enter Password" autocomplete="current-password" required>
-        <button type="submit">Login</button>
-    </form>
-
-    <p class="error-msg">
-        <?php if(isset($_GET['error'])) echo htmlspecialchars($_GET['error']); ?>
-    </p>
-</div>
-
+    <p>Redirecting to <a href="login.php">login</a>...</p>
 </body>
 </html>

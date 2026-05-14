@@ -193,6 +193,7 @@ function time_ago($datetime) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment_text'])) {
+    require_csrf();
 
     if (!isset($_SESSION['user_id'])) {
 
@@ -459,6 +460,7 @@ $conn->close();
     <?php if (isset($_SESSION['user_id'])): ?>
 
         <form method="POST" class="comment-form">
+            <?= csrf_field() ?>
 
             <textarea
                 name="comment_text"
@@ -614,6 +616,8 @@ function shareArticle() {
 
 // Check if article is saved on page load
 <?php if (isset($_SESSION['user_id'])): ?>
+const csrfToken = <?= json_encode(csrf_token()) ?>;
+
 document.addEventListener('DOMContentLoaded', function() {
     checkIfArticleSaved(<?= $article['id'] ?>);
 });
@@ -622,6 +626,7 @@ function checkIfArticleSaved(newsId) {
     const formData = new FormData();
     formData.append('action', 'check');
     formData.append('news_id', newsId);
+    formData.append('csrf_token', csrfToken);
 
     fetch('save_news_action.php', {
         method: 'POST',
@@ -646,6 +651,7 @@ function toggleSaveArticle(newsId) {
     const formData = new FormData();
     formData.append('action', action);
     formData.append('news_id', newsId);
+    formData.append('csrf_token', csrfToken);
 
     fetch('save_news_action.php', {
         method: 'POST',
@@ -691,6 +697,7 @@ function submitVote(action) {
     const formData = new FormData();
     formData.append('action', action);
     formData.append('news_id', <?= (int)$article['id'] ?>);
+    formData.append('csrf_token', csrfToken);
 
     document.querySelectorAll('[data-vote-action]').forEach(function (button) {
         button.disabled = true;

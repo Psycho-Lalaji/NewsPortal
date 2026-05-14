@@ -1,12 +1,17 @@
 <?php
 require 'db.php';
-session_start();
 header('Content-Type: application/json');
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Not logged in']);
+    exit;
+}
+
+if (!csrf_is_valid()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Invalid request. Please refresh and try again.']);
     exit;
 }
 

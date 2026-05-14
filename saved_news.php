@@ -1,6 +1,5 @@
 <?php
 require 'db.php';
-session_start();
 
 // Redirect to login if not authenticated
 if (!isset($_SESSION['user_id'])) {
@@ -143,6 +142,8 @@ $conn->close();
     </div>
 
     <script>
+        const csrfToken = <?php echo json_encode(csrf_token()); ?>;
+
         function removeSavedNews(newsId) {
             if (!confirm('Remove this article from saved?')) {
                 return;
@@ -151,6 +152,7 @@ $conn->close();
             const formData = new FormData();
             formData.append('action', 'unsave');
             formData.append('news_id', newsId);
+            formData.append('csrf_token', csrfToken);
 
             fetch('save_news_action.php', {
                 method: 'POST',

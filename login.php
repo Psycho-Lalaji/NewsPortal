@@ -28,6 +28,10 @@ function redirect_by_role($role)
 // ── Determine current page ──────────────────────────────────────────────────
 $page = $_GET['page'] ?? 'login'; // login | forgot | otp | reset
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf('login.php?error=' . rawurlencode('Invalid request. Please refresh and try again.'));
+}
+
 // ── Already logged in → redirect ───────────────────────────────────────────
 if (isset($_SESSION['user_id'])) {
     $userId = (int) $_SESSION['user_id'];
@@ -229,6 +233,7 @@ if ($page === 'reset' && empty($_SESSION['otp_verified'])) {
         <?php endif; ?>
 
         <form method="POST" action="login.php?page=forgot" id="forgotForm">
+            <?php echo csrf_field(); ?>
             <div class="form-group">
                 <input type="email" name="email" required placeholder=" ">
                 <label>REGISTERED EMAIL</label>
@@ -261,6 +266,7 @@ if ($page === 'reset' && empty($_SESSION['otp_verified'])) {
         <?php endif; ?>
 
         <form method="POST" action="login.php?page=otp" id="otpForm">
+            <?php echo csrf_field(); ?>
             <div class="form-group">
                 <input type="text" name="otp" required placeholder=" " maxlength="6" pattern="\d{6}" autocomplete="off">
                 <label>6-DIGIT OTP</label>
@@ -284,6 +290,7 @@ if ($page === 'reset' && empty($_SESSION['otp_verified'])) {
         <?php endif; ?>
 
         <form method="POST" action="login.php?page=reset" id="resetForm">
+            <?php echo csrf_field(); ?>
             <div class="form-group password-group">
                 <input type="password" id="newpassword" name="password" required placeholder=" " minlength="8">
                 <label>NEW PASSWORD</label>
@@ -314,6 +321,7 @@ if ($page === 'reset' && empty($_SESSION['otp_verified'])) {
         <?php endif; ?>
 
         <form method="POST" action="login.php" id="loginForm">
+            <?php echo csrf_field(); ?>
             <div class="form-group">
                 <input type="text" name="username" required placeholder=" ">
                 <label>EMAIL / USERNAME</label>

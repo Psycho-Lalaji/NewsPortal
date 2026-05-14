@@ -15,6 +15,8 @@ $statusMessage = '';
 $statusClass = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf('admin_review.php?status=invalid_request');
+
     $postId = (int) ($_POST['post_id'] ?? 0);
     $action = $_POST['action'] ?? '';
 
@@ -88,6 +90,9 @@ if ($statusParam === 'approved') {
     $statusClass = 'status-success';
 } elseif ($statusParam === 'error') {
     $statusMessage = 'Unable to update submission status.';
+    $statusClass = 'status-error';
+} elseif ($statusParam === 'invalid_request') {
+    $statusMessage = 'Invalid request. Please refresh and try again.';
     $statusClass = 'status-error';
 }
 
@@ -204,6 +209,7 @@ $conn->close();
                                     <td><?php echo htmlspecialchars($item['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td>
                                         <form method="POST" class="review-actions">
+                                            <?php echo csrf_field(); ?>
                                             <input type="hidden" name="post_id" value="<?php echo (int) $item['id']; ?>">
                                             <button type="submit" name="action" value="approved" class="btn-xs btn-approve">Approve</button>
                                             <button type="submit" name="action" value="rejected" class="btn-xs btn-reject">Reject</button>
@@ -265,6 +271,7 @@ $conn->close();
                                     <td><?php echo htmlspecialchars($item['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td>
                                         <form method="POST" onsubmit="return confirm('⚠️ WARNING: Are you sure you want to permanently delete this news post?');" style="display:inline;">
+                                            <?php echo csrf_field(); ?>
                                             <input type="hidden" name="post_id" value="<?php echo (int)$item['id']; ?>">
                                             <button type="submit" name="action" value="delete" class="btn-reject" style="border:none; border-radius:8px; padding:6px 12px; color:#fff; font-weight:600; font-size:0.8rem; cursor:pointer; background:#dc2626; transition:background 0.2s;">Delete</button>
                                         </form>
