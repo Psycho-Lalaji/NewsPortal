@@ -27,6 +27,24 @@ $conn->query("CREATE TABLE IF NOT EXISTS admin_logs (
         ON DELETE SET NULL
 )");
 
+// Ensure the news voting table exists. One user can have one active vote per article.
+$conn->query("CREATE TABLE IF NOT EXISTS news_votes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    news_id INT NOT NULL,
+    user_id INT NOT NULL,
+    vote_type ENUM('up','down') NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_vote_news
+        FOREIGN KEY (news_id) REFERENCES news_posts(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_vote_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE,
+    UNIQUE KEY unique_user_news_vote (user_id, news_id),
+    INDEX idx_news_vote_counts (news_id, vote_type)
+)");
+
 /**
  * Log an audit action to the database.
  * 

@@ -395,6 +395,53 @@ nav .live-badge {
   font-size: 0.78rem;
 }
 
+.vote-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: inherit;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.vote-summary span {
+  opacity: 0.78;
+}
+
+.vote-summary strong {
+  min-width: 26px;
+  min-height: 22px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  color: currentColor;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vote-summary--card {
+  margin-top: 9px;
+  width: fit-content;
+  padding: 6px 8px;
+  border: 1px solid #dce8fb;
+  border-radius: 999px;
+  background: #f7faff;
+  color: #425f95;
+}
+
+.vote-summary--card strong {
+  background: #e6efff;
+  color: #153a7a;
+}
+
+.side-card .vote-summary--card {
+  margin-top: 3px;
+}
+
 .hero-summary {
   margin-top: 12px;
   color: #d7e7ff;

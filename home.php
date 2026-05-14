@@ -116,6 +116,11 @@ function status_label($status)
     return 'Published';
 }
 
+function vote_score(array $item)
+{
+    return (int) ($item['upvotes'] ?? 0) - (int) ($item['downvotes'] ?? 0);
+}
+
 $currentRole = strtolower(trim((string) ($_SESSION['user_role'] ?? '')));
 $dashboardUrl = '';
 if ($currentRole === 'admin') {
@@ -142,9 +147,18 @@ if ($catQuery) {
 $approvedNews = [];
 $categoryCounts = [];
 $query = "SELECT n.id, n.title, n.summary, n.category, n.media_path, n.media_type, n.author_name, n.created_at, n.status,
-                 u.username AS editor_username
+                 u.username AS editor_username,
+                 COALESCE(v.upvotes, 0) AS upvotes,
+                 COALESCE(v.downvotes, 0) AS downvotes
           FROM news_posts n
           LEFT JOIN users u ON n.created_by = u.id
+          LEFT JOIN (
+              SELECT news_id,
+                     SUM(vote_type = 'up') AS upvotes,
+                     SUM(vote_type = 'down') AS downvotes
+              FROM news_votes
+              GROUP BY news_id
+          ) v ON v.news_id = n.id
           WHERE $statusCondition
           ORDER BY n.created_at DESC";
 
@@ -302,6 +316,11 @@ $conn->close();
                         <div class="meta-row">
                             <span>By <?php echo e(author_name($heroItem)); ?></span>
                             <span><?php echo e(format_published_at($heroItem['created_at'])); ?></span>
+                            <span class="vote-summary" title="Article vote score">
+                                ▲ <?php echo e((string) ($heroItem['upvotes'] ?? 0)); ?>
+                                <span>▼ <?php echo e((string) ($heroItem['downvotes'] ?? 0)); ?></span>
+                                <strong><?php echo e((string) vote_score($heroItem)); ?></strong>
+                            </span>
                         </div>
                         <?php if (!empty($heroItem['summary'])) : ?>
                             <p class="hero-summary"><?php echo e($heroItem['summary']); ?></p>
@@ -342,6 +361,11 @@ $conn->close();
                                     <p class="cat-summary"><?php echo e($item['summary']); ?></p>
                                 <?php endif; ?>
                                 <div class="ago"><?php echo e(format_published_at($item['created_at'])); ?> - <?php echo e(author_name($item)); ?></div>
+                                <div class="vote-summary vote-summary--card" title="Article vote score">
+                                    ▲ <?php echo e((string) ($item['upvotes'] ?? 0)); ?>
+                                    <span>▼ <?php echo e((string) ($item['downvotes'] ?? 0)); ?></span>
+                                    <strong><?php echo e((string) vote_score($item)); ?></strong>
+                                </div>
                             </div>
                         </article>
                     <?php endforeach; ?>
@@ -373,6 +397,11 @@ $conn->close();
                                 <span class="cat-sm"><?php echo e($item['category']); ?> - <?php echo e(status_label($item['status'] ?? 'approved')); ?></span>
                                 <h3><?php echo e($item['title']); ?></h3>
                                 <div class="meta-sm">By <?php echo e(author_name($item)); ?> - <?php echo e(format_published_at($item['created_at'])); ?></div>
+                                <div class="vote-summary vote-summary--card" title="Article vote score">
+                                    ▲ <?php echo e((string) ($item['upvotes'] ?? 0)); ?>
+                                    <span>▼ <?php echo e((string) ($item['downvotes'] ?? 0)); ?></span>
+                                    <strong><?php echo e((string) vote_score($item)); ?></strong>
+                                </div>
                             </div>
                         </article>
                     <?php endforeach; ?>
@@ -431,7 +460,7 @@ $conn->close();
                                 <div class="trend-num"><?php echo e(str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT)); ?></div>
                                 <div>
                                     <div class="trend-title"><?php echo e($item['title']); ?></div>
-                                    <div class="trend-meta"><?php echo e($item['category']); ?> - <?php echo e(status_label($item['status'] ?? 'approved')); ?> - <?php echo e(format_published_at($item['created_at'])); ?></div>
+                                    <div class="trend-meta"><?php echo e($item['category']); ?> - <?php echo e(status_label($item['status'] ?? 'approved')); ?> - <?php echo e(format_published_at($item['created_at'])); ?> - Score <?php echo e((string) vote_score($item)); ?></div>
                                 </div>
                             </div>
                         <?php endforeach; ?>

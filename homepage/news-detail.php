@@ -65,9 +65,18 @@ if ($articleId === null || $articleId === false) {
 }
 
 $baseSelect = "SELECT n.id, n.title, n.summary, n.category, n.media_path, n.media_type, n.author_name, n.created_at, n.status,
-                      u.username AS editor_username
+                      u.username AS editor_username,
+                      COALESCE(v.upvotes, 0) AS upvotes,
+                      COALESCE(v.downvotes, 0) AS downvotes
                FROM news_posts n
-               LEFT JOIN users u ON n.created_by = u.id";
+               LEFT JOIN users u ON n.created_by = u.id
+               LEFT JOIN (
+                   SELECT news_id,
+                          SUM(vote_type = 'up') AS upvotes,
+                          SUM(vote_type = 'down') AS downvotes
+                   FROM news_votes
+                   GROUP BY news_id
+               ) v ON v.news_id = n.id";
 
 $article = null;
 $articleQuery = "$baseSelect WHERE n.id = $articleId AND $statusCondition LIMIT 1";
@@ -91,9 +100,30 @@ if ($articleNotFound) {
         'author_name' => '',
         'created_at' => date('Y-m-d H:i:s'),
         'status' => 'approved',
-        'editor_username' => ''
+        'editor_username' => '',
+        'upvotes' => 0,
+        'downvotes' => 0
     ];
 }
+
+$userVote = null;
+if (!$articleNotFound && isset($_SESSION['user_id'])) {
+    $voteUserId = (int) $_SESSION['user_id'];
+    $voteStmt = $conn->prepare('SELECT vote_type FROM news_votes WHERE news_id = ? AND user_id = ? LIMIT 1');
+    if ($voteStmt) {
+        $voteStmt->bind_param('ii', $articleId, $voteUserId);
+        $voteStmt->execute();
+        $voteResult = $voteStmt->get_result();
+        if ($voteRow = $voteResult->fetch_assoc()) {
+            $userVote = $voteRow['vote_type'];
+        }
+        $voteStmt->close();
+    }
+}
+
+$upvotes = (int)($article['upvotes'] ?? 0);
+$downvotes = (int)($article['downvotes'] ?? 0);
+$voteScore = $upvotes - $downvotes;
 
 $cat = $article['category'];
 $escapedCategory = $conn->real_escape_string($cat);
@@ -336,6 +366,46 @@ $conn->close();
                    target="_blank" title="Facebook">f</a>
             </div>
         </div>
+
+        <section class="vote-panel" aria-label="Article voting">
+            <div class="vote-score">
+                <span>Score</span>
+                <strong id="voteScore"><?= e((string)$voteScore) ?></strong>
+            </div>
+            <div class="vote-actions">
+                <?php if (isset($_SESSION['user_id']) && !$articleNotFound): ?>
+                    <button
+                        type="button"
+                        class="vote-btn <?= $userVote === 'up' ? 'active' : '' ?>"
+                        id="upvoteBtn"
+                        data-vote-action="upvote"
+                        aria-pressed="<?= $userVote === 'up' ? 'true' : 'false' ?>"
+                    >
+                        <span aria-hidden="true">▲</span>
+                        Upvote
+                        <strong id="upvoteCount"><?= e((string)$upvotes) ?></strong>
+                    </button>
+                    <button
+                        type="button"
+                        class="vote-btn vote-btn--down <?= $userVote === 'down' ? 'active' : '' ?>"
+                        id="downvoteBtn"
+                        data-vote-action="downvote"
+                        aria-pressed="<?= $userVote === 'down' ? 'true' : 'false' ?>"
+                    >
+                        <span aria-hidden="true">▼</span>
+                        Downvote
+                        <strong id="downvoteCount"><?= e((string)$downvotes) ?></strong>
+                    </button>
+                <?php else: ?>
+                    <a class="vote-login" href="login.php">Login to vote</a>
+                    <div class="vote-readonly">
+                        <span>▲ <?= e((string)$upvotes) ?></span>
+                        <span>▼ <?= e((string)$downvotes) ?></span>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="vote-status" id="voteStatus" aria-live="polite"></div>
+        </section>
 
         <!-- Media -->
         <?php if (($article['media_type'] ?? '') === 'image' && !empty($article['media_path'])): ?>
@@ -607,6 +677,79 @@ function updateSaveButtonState(isSaved) {
         saveBtn.classList.remove('saved');
         saveBtn.title = 'Save article';
         saveIcon.style.fill = 'none';
+    }
+}
+
+document.querySelectorAll('[data-vote-action]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        submitVote(button.getAttribute('data-vote-action'));
+    });
+});
+
+function submitVote(action) {
+    const status = document.getElementById('voteStatus');
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('news_id', <?= (int)$article['id'] ?>);
+
+    document.querySelectorAll('[data-vote-action]').forEach(function (button) {
+        button.disabled = true;
+    });
+    if (status) {
+        status.textContent = 'Updating vote...';
+    }
+
+    fetch('vote_news_action.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(function (response) {
+        return response.json().then(function (data) {
+            if (!response.ok) {
+                throw new Error(data.message || 'Unable to vote.');
+            }
+            return data;
+        });
+    })
+    .then(function (data) {
+        updateVoteUi(data);
+        if (status) {
+            status.textContent = data.user_vote ? 'Vote saved.' : 'Vote removed.';
+        }
+    })
+    .catch(function (error) {
+        if (status) {
+            status.textContent = error.message || 'Unable to vote.';
+        }
+    })
+    .finally(function () {
+        document.querySelectorAll('[data-vote-action]').forEach(function (button) {
+            button.disabled = false;
+        });
+    });
+}
+
+function updateVoteUi(data) {
+    const upvoteCount = document.getElementById('upvoteCount');
+    const downvoteCount = document.getElementById('downvoteCount');
+    const voteScore = document.getElementById('voteScore');
+    const upvoteBtn = document.getElementById('upvoteBtn');
+    const downvoteBtn = document.getElementById('downvoteBtn');
+
+    if (upvoteCount) upvoteCount.textContent = data.upvotes || 0;
+    if (downvoteCount) downvoteCount.textContent = data.downvotes || 0;
+    if (voteScore) voteScore.textContent = data.score || 0;
+
+    if (upvoteBtn) {
+        const isActive = data.user_vote === 'up';
+        upvoteBtn.classList.toggle('active', isActive);
+        upvoteBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    }
+
+    if (downvoteBtn) {
+        const isActive = data.user_vote === 'down';
+        downvoteBtn.classList.toggle('active', isActive);
+        downvoteBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     }
 }
 <?php endif; ?>
