@@ -236,7 +236,7 @@ $conn->close();
     </div>
 </div>
 
-<header>
+<header class="site-header">
     <a href="home.php" class="logo"><span class="logo-dot"></span>Ekata<span>News</span></a>
     <div class="header-actions">
         <?php if (isset($_SESSION['user_id'])) : ?>
@@ -259,7 +259,7 @@ $conn->close();
     </div>
 </header>
 
-<nav>
+<nav class="category-nav" aria-label="News categories">
     <a href="<?php echo e(build_home_url('', $searchQuery)); ?>" class="<?php echo $categoryFilter === '' ? 'active' : ''; ?>">
         All <span class="live-badge">LIVE</span>
     </a>
@@ -270,9 +270,9 @@ $conn->close();
     <?php endforeach; ?>
 </nav>
 
-<div class="container">
+<main class="container">
     <div class="grid-main">
-        <div>
+        <section class="main-column" aria-label="Featured news">
             <div class="sec-hdr">
                 <span class="sec-tag">Breaking</span>
                 <div class="bar"></div>
@@ -378,7 +378,7 @@ $conn->close();
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>
-        </div>
+        </section>
 
         <aside class="sidebar">
             <div class="search-box">
@@ -457,7 +457,7 @@ $conn->close();
             </div>
         </aside>
     </div>
-</div>
+</main>
 
 <footer>Copyright <?php echo e(date('Y')); ?> Ekata - News loaded from approved editor submissions.</footer>
 
