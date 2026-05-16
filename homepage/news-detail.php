@@ -173,6 +173,9 @@ foreach (array_merge([$article], $related, $recent) as $item) {
     }
 }
 
+
+
+
 /* ================= COMMENTS SECTION ================= */
 
 function time_ago($datetime) {
@@ -246,6 +249,19 @@ if ($commentResult instanceof mysqli_result) {
     $commentResult->free();
 }
 
+// nav bar remain same as home.php(bug fix )
+$categories = [];
+
+$catQuery = $conn->query("SELECT name FROM categories ORDER BY name ASC");
+
+if ($catQuery instanceof mysqli_result) {
+    while ($row = $catQuery->fetch_assoc()) {
+        $categories[] = $row['name'];
+    }
+
+    $catQuery->free();
+}
+
 
 
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -311,24 +327,27 @@ $conn->close();
     </div>
 </header>
 
-<!-- NAV -->
+<!-- NAV (updated one nav change)-->
+
 <nav>
-    <a href="home.php">All <span class="live-badge">LIVE</span></a>
-    <a href="home.php?category=<?= urlencode($cat) ?>" class="active"><?= e($cat) ?></a>
+    <a href="home.php"
+       class="<?= $cat === '' ? 'active' : '' ?>">
+        All <span class="live-badge">LIVE</span>
+    </a>
+
+    <?php foreach ($categories as $category): ?>
+        <a href="home.php?category=<?= urlencode($category) ?>"
+           class="<?= strcasecmp($cat, $category) === 0 ? 'active' : '' ?>">
+            <?= e($category) ?>
+        </a>
+    <?php endforeach; ?>
 </nav>
 
 <!-- ARTICLE -->
 <div class="detail-wrap">
     <main>
 
-        <nav class="breadcrumb" aria-label="breadcrumb">
-            <a href="home.php">Home</a>
-            <span class="sep">›</span>
-            <a href="home.php?category=<?= urlencode($cat) ?>"><?= e($cat) ?></a>
-            <span class="sep">›</span>
-            <span style="color:var(--navy);text-transform:none;"><?= e(safe_trim_width($article['title'], 55)) ?></span>
-        </nav>
-
+       
         <div class="d-cat-badge"><?= e($cat) ?> &nbsp;·&nbsp; <?= e(status_label($article['status'])) ?></div>
 
         <h1 class="d-title"><?= e($article['title']) ?></h1>
@@ -448,6 +467,8 @@ $conn->close();
                 <a class="d-tag" href="home.php">EkataNews</a>
             </div>
         </div>
+
+        
 
         <!-- COMMENTS -->
 
