@@ -866,6 +866,8 @@ footer {
   }
 }
 
+/* Responsive Design For Tablet */
+   
 @media (max-width: 900px) {
   header {
     align-items: flex-start;
@@ -899,6 +901,7 @@ footer {
   }
 }
 
+/* Responsive Design for large mobiles */
 @media (max-width: 720px) {
   .topbar {
     padding: 6px 18px;
@@ -945,6 +948,7 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+/* Responsive Design (MOBILE) */
 
 @media (max-width: 560px) {
   .topbar {
@@ -1071,6 +1075,7 @@ footer {
   }
 }
 
+/* Responsive Design for small mobile */
 @media (max-width: 380px) {
   .header-actions {
     grid-template-columns: 1fr;

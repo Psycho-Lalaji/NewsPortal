@@ -3,18 +3,21 @@ require 'db.php';
 
 header('Content-Type: application/json');
 
+// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Please log in to vote.']);
     exit;
 }
 
+// CSRF protection check
 if (!csrf_is_valid()) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Invalid request. Please refresh and try again.']);
     exit;
 }
 
+// Get user and request data
 $userId = (int) $_SESSION['user_id'];
 $newsId = filter_input(INPUT_POST, 'news_id', FILTER_VALIDATE_INT);
 $action = strtolower(trim((string) ($_POST['action'] ?? '')));
@@ -31,10 +34,11 @@ if (!in_array($action, ['upvote', 'downvote', 'remove'], true)) {
     exit;
 }
 
+// Function to get vote summary for a news post
 function get_vote_state(mysqli $conn, int $newsId, int $userId): array
 {
     $counts = ['upvotes' => 0, 'downvotes' => 0, 'score' => 0, 'user_vote' => null];
-
+    // Get total upvotes and downvotes
     $countStmt = $conn->prepare(
         "SELECT
             SUM(vote_type = 'up') AS upvotes,
@@ -52,7 +56,8 @@ function get_vote_state(mysqli $conn, int $newsId, int $userId): array
         }
         $countStmt->close();
     }
-
+        
+    // Get user's current vote
     $userStmt = $conn->prepare('SELECT vote_type FROM news_votes WHERE news_id = ? AND user_id = ? LIMIT 1');
     if ($userStmt) {
         $userStmt->bind_param('ii', $newsId, $userId);
@@ -64,10 +69,12 @@ function get_vote_state(mysqli $conn, int $newsId, int $userId): array
         $userStmt->close();
     }
 
+    // Calculate score
     $counts['score'] = $counts['upvotes'] - $counts['downvotes'];
     return $counts;
 }
 
+// Verify article exists
 $newsStmt = $conn->prepare("SELECT id FROM news_posts WHERE id = ? AND status = 'approved' LIMIT 1");
 if (!$newsStmt) {
     http_response_code(500);
@@ -88,6 +95,7 @@ if (!$newsExists) {
 }
 
 try {
+    // Remove vote
     if ($action === 'remove') {
         $stmt = $conn->prepare('DELETE FROM news_votes WHERE news_id = ? AND user_id = ?');
         $stmt->bind_param('ii', $newsId, $userId);
@@ -96,6 +104,7 @@ try {
     } else {
         $voteType = $action === 'upvote' ? 'up' : 'down';
 
+        // Check existing vote
         $currentStmt = $conn->prepare('SELECT vote_type FROM news_votes WHERE news_id = ? AND user_id = ? LIMIT 1');
         $currentStmt->bind_param('ii', $newsId, $userId);
         $currentStmt->execute();
@@ -103,6 +112,7 @@ try {
         $currentVote = ($row = $currentResult->fetch_assoc()) ? $row['vote_type'] : null;
         $currentStmt->close();
 
+        // Update the votes
         if ($currentVote === $voteType) {
             $stmt = $conn->prepare('DELETE FROM news_votes WHERE news_id = ? AND user_id = ?');
             $stmt->bind_param('ii', $newsId, $userId);
@@ -119,7 +129,8 @@ try {
             $stmt->close();
         }
     }
-
+    
+    // Return updated vote data
     echo json_encode(array_merge(['success' => true], get_vote_state($conn, $newsId, $userId)));
 } catch (Throwable $e) {
     http_response_code(500);
